@@ -97,6 +97,7 @@ test('desktop lettering and header keep their geometry when navigation opens', a
 })
 
 test('tap on the large title opens and pins the navigation', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'On desktop the title is replaced by navigation on hover')
   await page.goto('/')
   if (isMobile) await page.locator('.rail-brand').tap()
   else await page.locator('.rail-brand').click()

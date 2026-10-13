@@ -35,6 +35,8 @@ describe('navigation rail', () => {
     fireEvent.pointerEnter(rail, { pointerType: 'touch' })
     expect(toggle).toHaveAttribute('aria-expanded', 'false')
     fireEvent.pointerEnter(rail, { pointerType: 'mouse' })
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    fireEvent.pointerMove(rail, { pointerType: 'mouse' })
     expect(toggle).toHaveAttribute('aria-expanded', 'true')
     fireEvent.pointerLeave(rail, { pointerType: 'mouse' })
     expect(toggle).toHaveAttribute('aria-expanded', 'false')

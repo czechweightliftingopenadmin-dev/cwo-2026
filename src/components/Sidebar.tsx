@@ -1,4 +1,5 @@
 import { ArrowUpRight, Menu, X } from 'lucide-react'
+import { useRef } from 'react'
 import type { MouseEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { event } from '../config/event'
@@ -14,6 +15,7 @@ const sections = [
 export function Sidebar() {
   const { t } = useTranslation()
   const { open, pinned, panelRef, toggleRef, dispatch, close } = useNavigation()
+  const mouseHasMoved = useRef(false)
 
   function navigate(e: MouseEvent<HTMLAnchorElement>, id: string) {
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
@@ -35,7 +37,15 @@ export function Sidebar() {
       className="sidebar"
       data-open={open}
       onPointerEnter={(e) => {
-        if (e.pointerType === 'mouse') dispatch({ type: 'enter' })
+        if (e.pointerType === 'mouse' && mouseHasMoved.current) dispatch({ type: 'enter' })
+      }}
+      onPointerMove={(e) => {
+        // A browser can emit pointerenter at (0, 0) during initial layout.
+        // Open on mouse intent, so that a touch visitor starts with the title.
+        if (e.pointerType === 'mouse' && !mouseHasMoved.current) {
+          mouseHasMoved.current = true
+          dispatch({ type: 'enter' })
+        }
       }}
       onPointerLeave={() => dispatch({ type: 'leave' })}
       onFocusCapture={(e) => {
