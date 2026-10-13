@@ -34,20 +34,7 @@ export function Hero() {
       <div className="hero-body">
         <p className="edition-label">[ {t('hero.edition', { year: event.year })} ]</p>
         <h1 id="event-title" className="hero-title">
-          <span>CZECH</span>
-          <span>
-            WEIGHT
-            <span className="mobile-break">
-              <br />
-            </span>
-            LIFTING
-          </span>
-          <span className="open-title">
-            OPEN
-            <span className="title-asterisk" aria-hidden="true">
-              ✳
-            </span>
-          </span>
+          {event.name.toUpperCase()}
           <span className="sr-only">{event.year}</span>
         </h1>
         {event.dates && <Countdown dates={event.dates} />}

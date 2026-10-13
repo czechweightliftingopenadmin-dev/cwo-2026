@@ -39,6 +39,8 @@ export function Countdown({ dates }: { dates: EventDates }) {
           t('countdown.seconds'),
         ]}
         duration={0.5}
+        showSeparators={false}
+        digitBlockStyle={{ fontFamily: 'var(--font-display)', fontWeight: 500 }}
         labelStyle={{
           fontFamily: 'var(--font-sans)',
           fontWeight: 500,

@@ -21,6 +21,17 @@ test('navigation, languages, themes, and preferences work on desktop and touch',
   await expect(page.getByRole('heading', { level: 1 })).toContainText('CZECH')
   await expect(page.locator('.date-announcement')).toContainText(/21.*22.*2026/)
   await expect(page.getByRole('timer')).toBeVisible()
+  const digit = page.getByRole('timer').locator('.fcc__digit_block').first()
+  expect(await digit.evaluate((element) => getComputedStyle(element).fontFamily)).toContain(
+    'Bitcount Single',
+  )
+  const digitSize = await digit.evaluate((element) =>
+    parseFloat(getComputedStyle(element).fontSize),
+  )
+  const titleSize = await page
+    .locator('h1')
+    .evaluate((element) => parseFloat(getComputedStyle(element).fontSize))
+  expect(digitSize).toBeGreaterThan(titleSize * 2)
   const toggle = page.locator('.rail-toggle')
   const originalLeft = await page
     .locator('main')
