@@ -11,7 +11,7 @@ npm ci
 npm run dev
 ```
 
-Vite vypíše lokální adresu, standardně `http://127.0.0.1:5173`.
+Web se spustí na `http://localhost:8080` a automaticky se otevře ve výchozím prohlížeči. Pokud je port 8080 obsazený, server ohlásí chybu místo přepnutí na jiný port. Prohlížečové testy používají vlastní server na portu 4173 bez automatického otevírání prohlížeče.
 
 ## Kontroly a sestavení
 
