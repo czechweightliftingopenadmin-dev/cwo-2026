@@ -1,4 +1,3 @@
-import { ArrowUpRight } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { event } from '../config/event'
 import { formatEventDates } from '../lib/countdown'
@@ -52,14 +51,7 @@ export function Hero() {
         </div>
         {event.dates && <Countdown dates={event.dates} />}
       </div>
-      <div className="hero-bottom">
-        <a href="#about" className="hero-cta">
-          <span>{t('hero.cta')}</span>
-          <span className="cta-icon">
-            <ArrowUpRight size={24} aria-hidden="true" />
-          </span>
-        </a>
-      </div>
+      <div className="hero-bottom" aria-hidden="true" />
     </section>
   )
 }

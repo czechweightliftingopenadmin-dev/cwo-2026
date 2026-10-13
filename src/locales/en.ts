@@ -26,12 +26,41 @@ export const en: TranslationShape<typeof cs> = {
     location: 'Brno · Czech Republic',
     edition: '{{year}} edition',
     date: 'Dates coming soon',
-    cta: 'Event information',
   },
   about: {
     title: 'About the event',
-    text: 'Weightlifting competition in Brno, {{year}} edition.',
-    details: 'Event regulations and schedule are being prepared.',
+    text: 'Czech Weightlifting Open is a weightlifting competition in Brno for beginners and experienced lifters. Athletes compete in the snatch and clean & jerk.',
+    details: 'The event combines women’s and men’s individual categories with CWO Team OPEN.',
+    individuals: {
+      title: 'Individuals',
+      women: 'Women',
+      men: 'Men',
+      description:
+        'Women and men compete separately in bodyweight categories. Category allocation is based on bodyweight at the competition weigh-in.',
+      scoring:
+        'Placings are determined by the highest valid total: the sum of the best successful snatch and clean & jerk.',
+    },
+    teams: {
+      title: 'CWO Team OPEN',
+      members: '4 members',
+      description:
+        'Teams can be women’s, men’s or mixed. Members may come from different bodyweight and age groups.',
+      scoring:
+        'Teams are ranked by their team Sinclair points, which allow performances at different bodyweights to be compared.',
+      compositionTitle: 'Four-member line-ups',
+      womenOnly: '4 women',
+      threeWomen: '3 women + 1 man',
+      balanced: '2 women + 2 men',
+      threeMen: '1 woman + 3 men',
+      menOnly: '4 men',
+    },
+    academic: {
+      title: 'AM ČR',
+      description:
+        'CWO is accompanied by the Czech Academic Weightlifting Championships. Eligibility requirements and the 2026 event regulations will be published separately.',
+    },
+    sourceNote:
+      'This description is based on the 2025 format. Exact bodyweight categories, age requirements, team composition and rules for 2026 will be confirmed in this year’s event regulations.',
   },
   countdown: {
     label: 'Until 21 December',

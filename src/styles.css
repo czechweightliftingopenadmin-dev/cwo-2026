@@ -523,27 +523,6 @@ main:focus {
   font: 500 clamp(32px, 5.3cqw, 58px)/1.1 var(--font-display);
   margin: 0;
 }
-.hero-cta {
-  display: flex;
-  gap: 20px;
-  align-items: center;
-  font-size: 12px;
-  white-space: nowrap;
-}
-.cta-icon {
-  display: flex;
-  width: 54px;
-  height: 54px;
-  justify-content: center;
-  align-items: center;
-  border-radius: 50%;
-  background: #b2dd80;
-  color: #202c19;
-  transition: transform var(--duration);
-}
-.hero-cta:hover .cta-icon {
-  transform: rotate(45deg);
-}
 
 /* Section headers and full-width backgrounds make each boundary explicit. */
 .content-section {
@@ -604,6 +583,66 @@ main:focus {
 }
 .about-copy > .muted-copy {
   margin: 20px 0 0;
+}
+.competition-formats {
+  margin-top: 44px;
+}
+.competition-format {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.5fr);
+  gap: 40px;
+  padding: 32px 0;
+  border-top: 1px solid var(--line);
+}
+.competition-format h3 {
+  margin: 0;
+  font: 450 clamp(26px, 2.6vw, 36px)/1.15 var(--font-display);
+}
+.competition-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+.competition-tags span {
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  font-size: 12px;
+}
+.competition-copy p {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.75;
+}
+.competition-copy p + p {
+  margin-top: 16px;
+}
+.competition-copy h4 {
+  margin: 24px 0 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.team-compositions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.team-compositions li {
+  padding: 7px 10px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  font-size: 12px;
+}
+.competition-note {
+  margin: 0;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
 }
 .venue-layout {
   display: grid;
@@ -816,12 +855,9 @@ main:focus {
     align-items: flex-start;
     flex-direction: column;
   }
-  .hero-cta {
-    width: 100%;
-    justify-content: space-between;
-  }
   .about-layout,
-  .venue-layout {
+  .venue-layout,
+  .competition-format {
     grid-template-columns: 1fr;
   }
 }
@@ -928,15 +964,6 @@ main:focus {
   .date-announcement p {
     font-size: clamp(28px, 7cqw, 38px);
   }
-  .hero-cta {
-    justify-content: space-between;
-    margin-top: 0;
-    font-size: 11px;
-  }
-  .cta-icon {
-    width: 44px;
-    height: 44px;
-  }
   .content-section {
     padding: 40px 24px;
   }
@@ -952,7 +979,8 @@ main:focus {
     font-size: clamp(26px, 5.5vw, 40px);
   }
   .about-layout,
-  .venue-layout {
+  .venue-layout,
+  .competition-format {
     grid-template-columns: 1fr;
     gap: 28px;
   }
