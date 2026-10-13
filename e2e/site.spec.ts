@@ -1,5 +1,16 @@
 import { expect, test } from '@playwright/test'
 
+// Tests do not depend on, or repeatedly download tiles from, the public provider.
+test.beforeEach(async ({ page }) => {
+  await page.route('https://tile.openstreetmap.org/**', (route) =>
+    route.fulfill({
+      contentType: 'image/svg+xml',
+      headers: { 'access-control-allow-origin': '*' },
+      body: '<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256"><rect width="256" height="256" fill="#ddd"/></svg>',
+    }),
+  )
+})
+
 test('navigation, languages, themes, and preferences work on desktop and touch', async ({
   page,
   isMobile,
@@ -8,7 +19,8 @@ test('navigation, languages, themes, and preferences work on desktop and touch',
   page.on('pageerror', (error) => errors.push(error.message))
   await page.goto('/')
   await expect(page.getByRole('heading', { level: 1 })).toContainText('CZECH')
-  await expect(page.getByText('Termín brzy oznámíme')).toBeVisible()
+  await expect(page.locator('.date-announcement')).toContainText(/21.*22.*2026/)
+  await expect(page.getByRole('timer')).toBeVisible()
   const toggle = page.locator('.rail-toggle')
   const originalLeft = await page
     .locator('main')
@@ -21,7 +33,8 @@ test('navigation, languages, themes, and preferences work on desktop and touch',
   ).toBe(originalLeft)
   await page.getByRole('button', { name: 'English', exact: true }).click()
   await expect(page.locator('html')).toHaveAttribute('lang', 'en')
-  await expect(page.getByText('Dates coming soon')).toBeVisible()
+  await expect(page.locator('.date-announcement')).toContainText(/21.*22.*2026/)
+  await expect(page.getByRole('timer', { name: 'Until 21 December' })).toBeVisible()
   await page.getByRole('button', { name: 'Light', exact: true }).click()
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
   await page.keyboard.press('Escape')
@@ -35,7 +48,76 @@ test('navigation, languages, themes, and preferences work on desktop and touch',
   await page.getByRole('link', { name: /Místo konání/ }).click()
   await expect(toggle).toHaveAttribute('aria-expanded', 'false')
   await expect(page.locator('#venue')).toBeFocused()
+  await expect(page.locator('.venue-map')).toHaveAttribute('data-map-status', 'ready')
   expect(errors).toEqual([])
+})
+
+test('desktop lettering and header keep their geometry when navigation opens', async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(isMobile, 'Desktop column geometry')
+  await page.goto('/')
+  const railWidth = await page
+    .locator('.sidebar')
+    .evaluate((element) => element.getBoundingClientRect().width)
+  const headerHeight = await page
+    .locator('.rail-toggle')
+    .evaluate((element) => element.getBoundingClientRect().height)
+  expect(railWidth).toBeGreaterThanOrEqual(300)
+  const initialSize = await page
+    .locator('.rail-initial')
+    .first()
+    .evaluate((element) => parseFloat(getComputedStyle(element).fontSize))
+  const otherSize = await page
+    .locator('.rail-word > span:nth-child(2)')
+    .first()
+    .evaluate((element) => parseFloat(getComputedStyle(element).fontSize))
+  expect(initialSize / otherSize).toBeCloseTo(1.2)
+  await page.locator('.rail-toggle').click()
+  expect(
+    await page.locator('.sidebar').evaluate((element) => element.getBoundingClientRect().width),
+  ).toBe(railWidth)
+  expect(
+    await page
+      .locator('.rail-toggle')
+      .evaluate((element) => element.getBoundingClientRect().height),
+  ).toBe(headerHeight)
+})
+
+test('tap on the large title opens and pins the navigation', async ({ page, isMobile }) => {
+  await page.goto('/')
+  if (isMobile) await page.locator('.rail-brand').tap()
+  else await page.locator('.rail-brand').click()
+  await expect(page.getByRole('navigation')).toBeVisible()
+  await expect(page.locator('.rail-toggle')).toHaveAttribute('aria-label', 'Zavřít navigaci')
+  await page.keyboard.press('Escape')
+  await expect(page.locator('.rail-toggle')).toHaveAttribute('aria-expanded', 'false')
+})
+
+test('flip clock updates at midnight and handles the end of the competition', async ({ page }) => {
+  await page.clock.install({ time: new Date('2026-12-20T22:59:58Z') })
+  await page.goto('/')
+  await expect(page.getByRole('timer')).toBeVisible()
+  await expect(page.getByText('Sekundy', { exact: true })).toBeVisible()
+  await page.clock.fastForward(3000)
+  await expect(page.getByText('Soutěž probíhá', { exact: true })).toBeVisible()
+  await expect(page.getByRole('timer')).toHaveCount(0)
+  await page.clock.fastForward(48 * 60 * 60 * 1000)
+  await expect(page.getByText('Soutěž skončila', { exact: true })).toBeVisible()
+})
+
+test('map failure keeps the address and external map link available', async ({ page }) => {
+  await page.route('https://tile.openstreetmap.org/**', (route) => route.abort())
+  await page.goto('/')
+  await page.locator('#venue').scrollIntoViewIfNeeded()
+  await expect(page.locator('.venue-map')).toHaveAttribute('data-map-status', 'error')
+  await expect(page.getByText('Kamenice 753/5, 625 00 Brno')).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Otevřít mapu ↗' })).toHaveAttribute(
+    'href',
+    /mlat=49\.1785&mlon=16\.5687/,
+  )
+  await expect(page.locator('.map-attribution')).toBeVisible()
 })
 
 test('both languages and themes fit without horizontal overflow and fonts load', async ({

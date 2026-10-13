@@ -1,10 +1,26 @@
 import { MapPin } from 'lucide-react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { event } from '../config/event'
+
+const VenueMap = lazy(() => import('./VenueMap'))
 
 export function Venue() {
   const { t, i18n } = useTranslation()
   const language = i18n.language === 'en' ? 'en' : 'cs'
+  const mapContainerRef = useRef<HTMLDivElement>(null)
+  const [showMap, setShowMap] = useState(false)
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry?.isIntersecting) {
+        setShowMap(true)
+        observer.disconnect()
+      }
+    })
+    if (mapContainerRef.current) observer.observe(mapContainerRef.current)
+    return () => observer.disconnect()
+  }, [])
   return (
     <section
       id="venue"
@@ -14,34 +30,28 @@ export function Venue() {
     >
       <div className="section-label">
         <span>02 /</span>
-        <span>{t('venue.label')}</span>
+        <h2 id="venue-title" className="section-title">
+          {t('venue.title')}
+        </h2>
       </div>
       <div className="venue-layout">
         <div className="venue-copy">
-          <h2 id="venue-title" className="section-title whitespace-pre-line">
-            {t('venue.title')}
-          </h2>
           <div className="venue-address">
             <MapPin size={22} aria-hidden="true" />
             <div>
               <p>{event.venue[language]}</p>
               <p className="muted-copy">{t('venue.university')}</p>
+              <p className="muted-copy">{event.address}</p>
             </div>
           </div>
-          <p className="muted-copy venue-details">{t('venue.details')}</p>
+          <p className="venue-location">
+            {event.city} · {t('venue.country')}
+          </p>
         </div>
-        <div className="venue-graphic">
-          <div className="venue-rings" aria-hidden="true">
-            <i />
-            <i />
-            <i />
-            <span>+</span>
-          </div>
-          <span className="venue-city">{event.city.toUpperCase()}</span>
-          <div className="venue-graphic-bottom">
-            <span>{t('venue.country')}</span>
-            <span>{event.year}</span>
-          </div>
+        <div className="venue-map-container" ref={mapContainerRef}>
+          <Suspense fallback={<p className="map-placeholder">{t('venue.mapLoading')}</p>}>
+            {showMap ? <VenueMap /> : <p className="map-placeholder">{t('venue.mapLoading')}</p>}
+          </Suspense>
         </div>
       </div>
     </section>

@@ -1,9 +1,12 @@
-import { ArrowDown, ArrowUpRight } from 'lucide-react'
+import { ArrowUpRight } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { event } from '../config/event'
+import { formatEventDates } from '../lib/countdown'
+import { Countdown } from './Countdown'
 
 export function Hero() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const language = i18n.language === 'en' ? 'en' : 'cs'
 
   return (
     <section id="home" tabIndex={-1} className="hero" aria-labelledby="event-title">
@@ -25,10 +28,7 @@ export function Hero() {
         <div className="art-dots" />
       </div>
       <div className="hero-top">
-        <span className="eyebrow">
-          <span className="status-dot" />
-          {t('hero.eyebrow')}
-        </span>
+        <span className="eyebrow">CWO {event.year}</span>
         <span className="hero-location">{t('hero.location')}</span>
       </div>
       <div className="hero-body">
@@ -50,14 +50,14 @@ export function Hero() {
           </span>
           <span className="sr-only">{event.year}</span>
         </h1>
-        <p className="hero-caption">{t('hero.caption')}</p>
+        {event.dates && <Countdown dates={event.dates} />}
       </div>
       <div className="hero-bottom">
         <div className="date-announcement">
           <span className="date-marker" aria-hidden="true">
             ↗
           </span>
-          <p>{event.date ?? t('hero.date')}</p>
+          <p>{event.dates ? formatEventDates(event.dates, language) : t('hero.date')}</p>
         </div>
         <a href="#about" className="hero-cta">
           <span>{t('hero.cta')}</span>
@@ -65,10 +65,6 @@ export function Hero() {
             <ArrowUpRight size={24} aria-hidden="true" />
           </span>
         </a>
-      </div>
-      <div className="hero-scroll" aria-hidden="true">
-        <span>{t('hero.scroll')}</span>
-        <ArrowDown size={14} />
       </div>
     </section>
   )

@@ -32,7 +32,6 @@ export default function App() {
           <span className="footer-brand">
             CWO <span>{event.year}</span>
           </span>
-          <span className="footer-note">{t('footer.note')}</span>
           <a href="#home" className="footer-top">
             {t('footer.back')}
             <ArrowUp size={18} aria-hidden="true" />
