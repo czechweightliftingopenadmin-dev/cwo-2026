@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="cs" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#101011" />
+    <meta
+      name="description"
+      content="Czech Weightlifting Open 2026. Vzpírání v Brně. Termín a další informace brzy oznámíme."
+    />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Czech Weightlifting Open 2026</title>
+    <script>
+      // Apply a saved theme before the first paint; storage may be unavailable.
+      try {
+        const theme = localStorage.getItem('cwo:theme')
+        if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme
+      } catch {}
+      document.documentElement.style.colorScheme = document.documentElement.dataset.theme
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
