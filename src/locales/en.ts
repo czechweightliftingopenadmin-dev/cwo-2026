@@ -29,12 +29,14 @@ export const en: TranslationShape<typeof cs> = {
   },
   about: {
     title: 'About the event',
+    introTitle: 'Snatch & clean and jerk',
     text: 'Czech Weightlifting Open is a weightlifting competition in Brno for beginners and experienced lifters. Athletes compete in the snatch and clean & jerk.',
     details: 'The event combines women’s and men’s individual categories with CWO Team OPEN.',
     individuals: {
       title: 'Individuals',
       women: 'Women',
       men: 'Men',
+      categoriesTitle: 'Bodyweight categories',
       description:
         'Women and men compete separately in bodyweight categories. Category allocation is based on bodyweight at the competition weigh-in.',
       scoring:
@@ -59,8 +61,6 @@ export const en: TranslationShape<typeof cs> = {
       description:
         'CWO is accompanied by the Czech Academic Weightlifting Championships. Eligibility requirements and the 2026 event regulations will be published separately.',
     },
-    sourceNote:
-      'This description is based on the 2025 format. Exact bodyweight categories, age requirements, team composition and rules for 2026 will be confirmed in this year’s event regulations.',
   },
   countdown: {
     label: 'Until 21 December',

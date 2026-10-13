@@ -25,12 +25,14 @@ export const cs = {
   },
   about: {
     title: 'O soutěži',
+    introTitle: 'Vzpěračský dvojboj',
     text: 'Czech Weightlifting Open je vzpěračská soutěž v Brně pro začátečníky i zkušené závodníky. Soutěží se ve dvojboji — trhu a nadhozu.',
     details: 'Soutěž kombinuje kategorie jednotlivců žen a mužů s týmovým CWO Team OPEN.',
     individuals: {
       title: 'Jednotlivci',
       women: 'Ženy',
       men: 'Muži',
+      categoriesTitle: 'Hmotnostní kategorie',
       description:
         'Ženy a muži závodí odděleně v hmotnostních kategoriích. Zařazení do kategorie vychází z hmotnosti při soutěžním vážení.',
       scoring:
@@ -55,8 +57,6 @@ export const cs = {
       description:
         'CWO doplňuje Akademické mistrovství České republiky ve vzpírání. Podmínky účasti a propozice AM ČR 2026 zveřejníme samostatně.',
     },
-    sourceNote:
-      'Popis vychází z formátu ročníku 2025. Přesné hmotnostní kategorie, věkové podmínky, složení týmů a pravidla pro rok 2026 potvrdí letošní propozice.',
   },
   countdown: {
     label: 'Do 21. prosince',
