@@ -25,26 +25,33 @@ export const cs = {
   },
   about: {
     title: 'O soutěži',
-    introTitle: 'Vzpěračský dvojboj',
-    text: 'Czech Weightlifting Open je vzpěračská soutěž v Brně pro začátečníky i zkušené závodníky. Soutěží se ve dvojboji — trhu a nadhozu.',
-    details: 'Soutěž kombinuje kategorie jednotlivců žen a mužů s týmovým CWO Team OPEN.',
+    introTitle: 'Co je to CWO?',
+    text: 'Czech Weightlifting Open je vzpěračskou soutěží národního až mezinárodního charakteru, která se tradičně odehrává v Brně. Jedná se o klasické klání jednotlivců z řad žen i mužů rozdělených do standardních hmotnostních kategorií dle pravidel IWF a ČSV.',
+    details:
+      'Specialitou CWO je také kategorie TEAM, kde je každý tým složen ze 4 členů — mužů, žen nebo jejich kombinace. Vítáni jsou jednotlivci i týmy z řad začátečníků, pokročilých i zkušených závodníků a příznivci silových sportů všech věkových skupin.',
     individuals: {
       title: 'Jednotlivci',
       women: 'Ženy',
       men: 'Muži',
       categoriesTitle: 'Hmotnostní kategorie',
+      womenDescription: 'Kategorie jednotlivci ženy je určena pro ženy všech věkových kategorií.',
+      menDescription:
+        'Kategorie jednotlivci muži je určena pro muže a chlapce s minimálním věkem 15 let dovršených v kalendářním roce konání soutěže.',
       description:
-        'Ženy a muži závodí odděleně v hmotnostních kategoriích. Zařazení do kategorie vychází z hmotnosti při soutěžním vážení.',
+        'Ženy a muži soutěží odděleně v hmotnostních skupinách dle pravidel IWF a ČSV. Zařazení odpovídá hmotnosti závodnice nebo závodníka při vážení v den soutěže.',
+      minimumParticipants:
+        'Minimální počet závodnic nebo závodníků pro otevření dané hmotnostní skupiny je 5. Při nižším počtu registrovaných si pořadatel vyhrazuje právo sloučit skupiny podle počtu účastníků v nejbližších hmotnostních skupinách, typicky směrem do vyšší kategorie.',
       scoring:
-        'Pořadí v kategorii určuje nejvyšší platný dvojboj: součet nejlepšího platného pokusu v trhu a v nadhozu.',
+        'Výsledné pořadí v každé hmotnostní skupině je určeno seřazením nejvyšších dosažených hodnot platného dvojboje — součtu nejlepšího platného pokusu v trhu a v nadhozu.',
+      weighInRules:
+        'Pravidla vážení závodnic a závodníků najdete v pravidlech a soutěžním řádu ČSV.',
     },
     teams: {
       title: 'CWO Team OPEN',
       members: '4 členové',
-      description:
-        'Týmovou kategorii tvoří ženské, mužské nebo smíšené sestavy. Členové týmu mohou být z různých hmotnostních a věkových skupin.',
+      description: 'Kategorie CWO Team OPEN je určena pro čtyřčlenné týmy ve variabilním složení:',
       scoring:
-        'Týmy se porovnávají podle týmových Sinclairových bodů, které umožňují porovnat výkony závodníků různých tělesných hmotností.',
+        'Tyto kombinace mohou být napříč všemi hmotnostními i věkovými skupinami. Výsledné pořadí všech týmů je určeno seřazením hodnot Sinclairových bodů týmů.',
       compositionTitle: 'Složení čtyřčlenné sestavy',
       womenOnly: '4 ženy',
       threeWomen: '3 ženy + 1 muž',
@@ -55,7 +62,15 @@ export const cs = {
     academic: {
       title: 'AM ČR',
       description:
-        'CWO doplňuje Akademické mistrovství České republiky ve vzpírání. Podmínky účasti a propozice AM ČR 2026 zveřejníme samostatně.',
+        'Pravidla pro jednotlivce se vztahují na soutěž v rámci CWO i Akademického mistrovství České republiky ve vzpírání. Pro účast v CWO není nutné být členem ČSV, pro účast v AMČR je členství vyžadováno.',
+    },
+    rules: {
+      title: 'Pravidla a soutěžní řád ČSV',
+      csvDocument: 'Technická a soutěžní pravidla a předpisy ČSV',
+      csvEdition: 'PDF · čeština · vydání 2019',
+      iwfDocument: 'Aktuální technická a soutěžní pravidla IWF',
+      iwfEdition: 'Web IWF · angličtina',
+      newTab: 'Otevře se v nové kartě',
     },
   },
   countdown: {

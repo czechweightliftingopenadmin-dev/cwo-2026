@@ -36,6 +36,7 @@ GitHub Actions kontroluje formátování, typy, funkční testy, build a desktop
 
 - `src/config/event.ts`: rok, termín, název, město, adresa, souřadnice a CZ/EN název místa. Termín je 21.–22. 12. 2026. `dates.startsAt` nastavuje cíl odpočtu na 21. prosince v 00:00 českého času; neuvádí čas zahájení programu. `dates.endsAt` je půlnoc po posledním dni soutěže a `dates.timeZone` zajišťuje správné zobrazení data i návštěvníkům ze zahraničí. Při `dates: null` se odpočet skryje a zobrazí se oznámení termínu.
 - `src/locales/cs.ts` a `src/locales/en.ts`: všechny texty a přístupné názvy ovládání. Anglické překlady mají stejnou strukturu kontrolovanou TypeScriptem.
+- `src/config/competition.ts`: hmotnostní kategorie IWF pro seniory a juniory platné od 1. 8. 2026 a odkazy na pravidla. Texty soutěžních kategorií navazují na loňský web, včetně podmínek věku, otevření a slučování kategorií a členství ČSV pro AMČR.
 - `src/styles.css`: designové tokeny pro oba režimy, rozvržení, CSS grafika a responzivní varianty. Bitcount Single a Inter se načítají lokálně z Fontsource včetně českých znaků.
 - Pro vlastní grafiku dej export do `public/artwork/` a v konfiguraci nastav například `bannerBackground: '/artwork/banner.webp'`. Obrázek je samostatná vrstva pozadí banneru; obsah a navigace zůstávají v HTML. Soubor musíš přidat do repozitáře. Použij grafiku bez vestavěných textů, které by se opakovaly nebo nešly přeložit.
 
@@ -51,4 +52,6 @@ Odpočet používá stejnou knihovnu jako loňský web: `@leenguyen/react-flip-c
 
 Mapa používá OpenLayers a OpenStreetMap jako loňský web. Načítá se až při zobrazení sekce, má samostatný JS balík, styly pro oba režimy, vlastní značku a ovládání přiblížení. Kolečka myši neposouvají mapu během scrollování stránky. Zůstává viditelná atribuce OpenStreetMap i externí odkaz pro případ výpadku dlaždic. Prohlížečové testy dlaždice nahrazují místní odpovědí, takže nezávisí na externí službě. Souřadnice vycházejí z loňského webu; adresa je ověřena podle [mapy FSpS MU](https://www.fsps.muni.cz/mapa). Při změně místa aktualizuj adresu i souřadnice.
 
-Registrace, galerie, startovní listiny, harmonogram, dokumenty, kontakty a loga partnerů nejsou součástí první verze. Další podklady se doplní později. Loňský web zůstává samostatný a tento projekt jej nemění.
+Sekce „O soutěži“ obsahuje pravidla a soutěžní řád ČSV: stejné PDF z roku 2019 jako loňský web, uložené v `public/documents/csv-technicka-a-soutezni-pravidla-2019.pdf`. Vydání je uvedeno přímo u odkazu; vedle něj je odkaz na aktuální pravidla na oficiálním webu IWF. Při aktualizaci PDF změň soubor, cestu v `src/config/competition.ts` i označení vydání v obou překladech.
+
+Registrace, galerie, startovní listiny, harmonogram, propozice AMČR, kontakty a loga partnerů se doplní později. Loňský web zůstává samostatný a tento projekt jej nemění.

@@ -163,6 +163,27 @@ test('both languages and themes fit without horizontal overflow and fonts load',
   ).toBe(true)
 })
 
+test('weigh-in reference reaches rules and the linked ČSV PDF is available', async ({
+  page,
+  request,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.goto('/')
+  await page.locator('.rules-reference').click()
+  await expect(page).toHaveURL(/#rules$/)
+  await expect(page.locator('#rules')).toBeFocused()
+  const document = page.getByRole('link', { name: /Technická a soutěžní pravidla a předpisy ČSV/ })
+  await expect(document).toBeVisible()
+  await expect(document).toContainText('vydání 2019')
+  await expect(document).toHaveAttribute('target', '_blank')
+  const href = await document.getAttribute('href')
+  expect(href).toBeTruthy()
+  const response = await request.get(href!)
+  expect(response.ok()).toBe(true)
+  expect(response.headers()['content-type']).toContain('application/pdf')
+  expect((await response.body()).subarray(0, 5).toString()).toBe('%PDF-')
+})
+
 test('reduced motion disables navigation animation', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.goto('/')

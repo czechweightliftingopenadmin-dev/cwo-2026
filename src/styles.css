@@ -602,6 +602,10 @@ main:focus {
 .competition-copy p + p {
   margin-top: 16px;
 }
+.competition-copy > .bodyweight-categories + p,
+.competition-copy > .team-compositions + p {
+  margin-top: 24px;
+}
 .competition-copy h4 {
   margin: 24px 0 12px;
   font-size: 14px;
@@ -639,6 +643,51 @@ main:focus {
 }
 .bodyweight-group dd {
   margin: 0;
+}
+.bodyweight-group dd p {
+  margin-bottom: 12px;
+  font-size: 15px;
+}
+.rules-reference {
+  display: inline-block;
+  margin-top: 20px;
+  font-size: 14px;
+  line-height: 1.7;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.rules-documents {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+.rules-document {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  padding: 20px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  text-decoration: none;
+  transition: border-color var(--duration);
+}
+.rules-document:hover {
+  border-color: var(--ink);
+}
+.rules-document-title,
+.rules-document-meta {
+  display: block;
+}
+.rules-document-title {
+  font-size: 15px;
+  line-height: 1.6;
+}
+.rules-document-meta {
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
 }
 .venue-layout {
   display: grid;
@@ -976,6 +1025,10 @@ main:focus {
   .competition-format {
     grid-template-columns: 1fr;
     gap: 28px;
+  }
+  .rules-document {
+    gap: 10px;
+    padding: 16px 12px;
   }
   .venue-address p {
     font-size: 15px;

@@ -29,26 +29,35 @@ export const en: TranslationShape<typeof cs> = {
   },
   about: {
     title: 'About the event',
-    introTitle: 'Snatch & clean and jerk',
-    text: 'Czech Weightlifting Open is a weightlifting competition in Brno for beginners and experienced lifters. Athletes compete in the snatch and clean & jerk.',
-    details: 'The event combines women’s and men’s individual categories with CWO Team OPEN.',
+    introTitle: 'What is CWO?',
+    text: 'Czech Weightlifting Open is a weightlifting competition of national to international calibre, traditionally held in Brno. It is a classic contest for individual competitors, both women and men, divided into standard bodyweight categories according to IWF and ČSV rules.',
+    details:
+      'A special feature of CWO is the TEAM category, where each team consists of 4 members — men, women or a mixed line-up. Individuals and teams are welcome, including beginners, advanced and experienced competitors, as well as strength sports enthusiasts of all age groups.',
     individuals: {
       title: 'Individuals',
       women: 'Women',
       men: 'Men',
       categoriesTitle: 'Bodyweight categories',
+      womenDescription:
+        'The individual women’s category is open to female athletes of all age groups.',
+      menDescription:
+        'The individual men’s category is open to male athletes who turn at least 15 in the calendar year of the competition.',
       description:
-        'Women and men compete separately in bodyweight categories. Category allocation is based on bodyweight at the competition weigh-in.',
+        'Women and men compete separately in bodyweight groups according to IWF and ČSV rules. Category allocation is based on the athlete’s bodyweight at the weigh-in on the day of the competition.',
+      minimumParticipants:
+        'At least 5 athletes are required to open a bodyweight group. If fewer athletes register, the organiser reserves the right to merge adjacent groups based on participant numbers, typically into the next higher category.',
       scoring:
-        'Placings are determined by the highest valid total: the sum of the best successful snatch and clean & jerk.',
+        'The final ranking in each bodyweight group is determined by the highest valid total achieved — the sum of the best successful snatch and clean & jerk.',
+      weighInRules:
+        'Weigh-in rules for female and male athletes can be found in the ČSV competition rules and regulations.',
     },
     teams: {
       title: 'CWO Team OPEN',
       members: '4 members',
       description:
-        'Teams can be women’s, men’s or mixed. Members may come from different bodyweight and age groups.',
+        'The CWO Team OPEN category is intended for four-member teams with a variable line-up:',
       scoring:
-        'Teams are ranked by their team Sinclair points, which allow performances at different bodyweights to be compared.',
+        'These combinations may span all bodyweight and age groups. The final ranking of all teams is determined by their team Sinclair points.',
       compositionTitle: 'Four-member line-ups',
       womenOnly: '4 women',
       threeWomen: '3 women + 1 man',
@@ -59,7 +68,15 @@ export const en: TranslationShape<typeof cs> = {
     academic: {
       title: 'AM ČR',
       description:
-        'CWO is accompanied by the Czech Academic Weightlifting Championships. Eligibility requirements and the 2026 event regulations will be published separately.',
+        'The individual competition rules apply to both CWO and the Czech Academic Weightlifting Championships. ČSV membership is not required to compete in CWO, but it is required for the academic championships.',
+    },
+    rules: {
+      title: 'ČSV competition rules and regulations',
+      csvDocument: 'ČSV Technical and Competition Rules & Regulations',
+      csvEdition: 'PDF · Czech · 2019 edition',
+      iwfDocument: 'Current IWF Technical and Competition Rules & Regulations',
+      iwfEdition: 'IWF website · English',
+      newTab: 'Opens in a new tab',
     },
   },
   countdown: {

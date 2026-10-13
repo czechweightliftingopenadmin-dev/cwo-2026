@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
-import { bodyweightCategories } from '../config/competition'
+import { ArrowUpRight, FileText } from 'lucide-react'
+import { bodyweightCategories, rulesDocuments } from '../config/competition'
 
 export function About() {
   const { t } = useTranslation()
@@ -21,7 +22,7 @@ export function About() {
           <h3>{t('about.introTitle')}</h3>
           <div className="competition-copy">
             <p>{t('about.text')}</p>
-            <p className="muted-copy">{t('about.details')}</p>
+            <p>{t('about.details')}</p>
           </div>
         </div>
         <div className="competition-formats">
@@ -31,13 +32,13 @@ export function About() {
             </div>
             <div className="competition-copy">
               <p>{t('about.individuals.description')}</p>
-              <p>{t('about.individuals.scoring')}</p>
               <h4>{t('about.individuals.categoriesTitle')}</h4>
               <dl className="bodyweight-categories">
                 {(['women', 'men'] as const).map((group) => (
                   <div className="bodyweight-group" key={group}>
                     <dt>{t(`about.individuals.${group}`)}</dt>
                     <dd>
+                      <p>{t(`about.individuals.${group}Description`)}</p>
                       <ul className="category-list">
                         {bodyweightCategories[group].map((weight) => (
                           <li key={weight}>{weight}&nbsp;kg</li>
@@ -47,6 +48,11 @@ export function About() {
                   </div>
                 ))}
               </dl>
+              <p>{t('about.individuals.minimumParticipants')}</p>
+              <p>{t('about.individuals.scoring')}</p>
+              <a className="rules-reference" href="#rules">
+                {t('about.individuals.weighInRules')}
+              </a>
             </div>
           </article>
           <article className="competition-format" aria-labelledby="teams-title">
@@ -58,7 +64,6 @@ export function About() {
             </div>
             <div className="competition-copy">
               <p>{t('about.teams.description')}</p>
-              <p>{t('about.teams.scoring')}</p>
               <h4>{t('about.teams.compositionTitle')}</h4>
               <ul className="team-compositions">
                 {(['womenOnly', 'threeWomen', 'balanced', 'threeMen', 'menOnly'] as const).map(
@@ -67,12 +72,47 @@ export function About() {
                   ),
                 )}
               </ul>
+              <p>{t('about.teams.scoring')}</p>
             </div>
           </article>
           <article className="competition-format" aria-labelledby="academic-title">
             <h3 id="academic-title">{t('about.academic.title')}</h3>
             <div className="competition-copy">
               <p>{t('about.academic.description')}</p>
+            </div>
+          </article>
+          <article
+            id="rules"
+            tabIndex={-1}
+            className="competition-format"
+            aria-labelledby="rules-title"
+          >
+            <h3 id="rules-title">{t('about.rules.title')}</h3>
+            <div className="competition-copy rules-documents">
+              {(['csv', 'iwf'] as const).map((document) => (
+                <a
+                  key={document}
+                  className="rules-document"
+                  href={rulesDocuments[document]}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-describedby="rules-new-tab"
+                >
+                  <FileText size={22} aria-hidden="true" />
+                  <span>
+                    <span className="rules-document-title">
+                      {t(`about.rules.${document}Document`)}
+                    </span>
+                    <span className="rules-document-meta">
+                      {t(`about.rules.${document}Edition`)}
+                    </span>
+                  </span>
+                  <ArrowUpRight size={20} aria-hidden="true" />
+                </a>
+              ))}
+              <span id="rules-new-tab" className="sr-only">
+                {t('about.rules.newTab')}
+              </span>
             </div>
           </article>
         </div>
