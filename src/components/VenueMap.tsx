@@ -27,7 +27,7 @@ export default function VenueMap() {
     const map = new Map({
       target: targetRef.current,
       layers: [new TileLayer({ source, className: 'venue-map-tiles' })],
-      view: new View({ center: fromLonLat(event.coordinates), zoom: 16, minZoom: 10, maxZoom: 19 }),
+      view: new View({ center: fromLonLat(event.coordinates), zoom: 12, minZoom: 10, maxZoom: 19 }),
       controls: [],
       interactions: defaultInteractions({ mouseWheelZoom: false }),
       overlays: [

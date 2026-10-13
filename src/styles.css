@@ -492,7 +492,7 @@ main:focus {
 }
 .countdown .fcc__digit_block {
   /* Keep the flap nearly flat instead of projecting it towards the viewer. */
-  perspective: 1600px;
+  perspective: 400px;
 }
 .event-status {
   margin: 36px 0 0;
