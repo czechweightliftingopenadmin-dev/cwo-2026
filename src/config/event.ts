@@ -32,4 +32,5 @@ export const event: EventConfig = {
   city: 'Brno',
   address: 'Kamenice 753/5, 625 00 Brno',
   coordinates: [16.5687, 49.1785],
+  bannerBackground: '/banner.jpg',
 }

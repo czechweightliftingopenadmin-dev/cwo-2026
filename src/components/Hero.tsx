@@ -9,7 +9,13 @@ export function Hero() {
   const language = i18n.language === 'en' ? 'en' : 'cs'
 
   return (
-    <section id="home" tabIndex={-1} className="hero" aria-labelledby="event-title">
+    <section
+      id="home"
+      tabIndex={-1}
+      className="hero"
+      data-has-background={Boolean(event.bannerBackground)}
+      aria-labelledby="event-title"
+    >
       {event.bannerBackground && (
         <div
           className="hero-export"

@@ -328,9 +328,18 @@ main:focus {
 .hero-export {
   position: absolute;
   inset: 0;
-  background-position: center;
+  background-position: center 25%;
   background-size: cover;
   z-index: -1;
+}
+.hero[data-has-background='true'] {
+  --hero-ink: #fff9f1;
+}
+.hero-export::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, #120b205e, #120b2040);
 }
 .hero-art {
   position: absolute;
@@ -461,6 +470,7 @@ main:focus {
   --fcc-flip-duration: 0.3s;
   --fcc-background: var(--surface);
   --fcc-digit-color: var(--ink);
+  --fcc-digit-optical-offset: 0.1em;
   --fcc-digit-block-spacing: 4px;
   --fcc-digit-block-width: calc(
     (100cqw - 3 * var(--clock-gap) - 4 * var(--fcc-digit-block-spacing)) / 8
@@ -490,6 +500,11 @@ main:focus {
 }
 .countdown .fcc__separator {
   display: none;
+}
+.countdown .fcc__digit_block > div:not(:last-child),
+.countdown .fcc__digit_block > div:last-child > div {
+  /* Centre Bitcount's visible glyph, rather than its asymmetric advance width. */
+  padding-inline-start: var(--fcc-digit-optical-offset);
 }
 .hero-bottom {
   display: flex;
