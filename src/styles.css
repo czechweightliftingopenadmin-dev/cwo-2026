@@ -444,11 +444,12 @@ main:focus {
 }
 .countdown {
   margin-top: 40px;
-  width: 100%;
+  width: 88%;
+  container-type: inline-size;
 }
 .countdown .flip-clock {
   --clock-gap: clamp(12px, 2cqw, 28px);
-  --fcc-flip-duration: 0.5s;
+  --fcc-flip-duration: 0.3s;
   --fcc-background: var(--surface);
   --fcc-digit-color: var(--ink);
   --fcc-digit-block-spacing: 4px;
@@ -464,11 +465,15 @@ main:focus {
   --fcc-divider-height: 1px;
   --fcc-separator-size: clamp(2px, 0.35cqw, 4px);
   --fcc-separator-color: var(--hero-ink);
-  --fcc-shadow: 0 3px 10px #0002;
+  --fcc-shadow: 0 1px 3px #0001;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--clock-gap);
   font-family: var(--font-display);
+}
+.countdown .fcc__digit_block {
+  /* Keep the flap nearly flat instead of projecting it towards the viewer. */
+  perspective: 1600px;
 }
 .event-status {
   margin: 36px 0 0;
@@ -865,6 +870,7 @@ main:focus {
   }
   .countdown {
     margin-top: 28px;
+    width: 94%;
   }
   .countdown .flip-clock {
     --clock-gap: 14px;

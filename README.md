@@ -47,7 +47,7 @@ Animace respektují `prefers-reduced-motion`. Jazyk a vzhled se ukládají pod k
 
 ## Mapa a odpočet
 
-Odpočet používá stejnou knihovnu jako loňský web: `@leenguyen/react-flip-clock-countdown`, s vlastními CSS proměnnými pro barvy a velikost a číslicemi v Bitcount Single. Je hlavním prvkem banneru: na desktopu zabírá šířku obsahu, na mobilu se čtyři jednotky skládají do dvou řádků. Po dosažení termínu se zobrazí stav probíhající soutěže; po skončení stav skončené soutěže. Animace respektují omezení pohybu.
+Odpočet používá stejnou knihovnu jako loňský web: `@leenguyen/react-flip-clock-countdown`, s vlastními CSS proměnnými pro barvy a velikost a číslicemi v Bitcount Single. Je hlavním prvkem banneru: na desktopu zabírá 88 % šířky obsahu, na mobilu 94 % a čtyři jednotky se skládají do dvou řádků. Překlopení trvá 300 ms a zvýšená perspektiva omezuje vystupování karet z plochy. Po dosažení termínu se zobrazí stav probíhající soutěže; po skončení stav skončené soutěže. Animace respektují omezení pohybu.
 
 Mapa používá OpenLayers a OpenStreetMap jako loňský web. Načítá se až při zobrazení sekce, má samostatný JS balík, styly pro oba režimy, vlastní značku a ovládání přiblížení. Kolečka myši neposouvají mapu během scrollování stránky. Zůstává viditelná atribuce OpenStreetMap i externí odkaz pro případ výpadku dlaždic. Prohlížečové testy dlaždice nahrazují místní odpovědí, takže nezávisí na externí službě. Souřadnice vycházejí z loňského webu; adresa je ověřena podle [mapy FSpS MU](https://www.fsps.muni.cz/mapa). Při změně místa aktualizuj adresu i souřadnice.
 
