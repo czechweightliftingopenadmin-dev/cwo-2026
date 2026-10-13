@@ -29,7 +29,6 @@ export function Hero() {
       </div>
       <div className="hero-top">
         <span className="eyebrow">CWO {event.year}</span>
-        <span className="hero-location">{t('hero.location')}</span>
       </div>
       <div className="hero-body">
         <p className="edition-label">[ {t('hero.edition', { year: event.year })} ]</p>
@@ -37,15 +36,17 @@ export function Hero() {
           {event.name.toUpperCase()}
           <span className="sr-only">{event.year}</span>
         </h1>
+        <div className="hero-event-details">
+          <div className="date-announcement">
+            <p>{event.dates ? formatEventDates(event.dates, language) : t('hero.date')}</p>
+          </div>
+          <p className="hero-venue">
+            {event.venue[language]} · {event.city}
+          </p>
+        </div>
         {event.dates && <Countdown dates={event.dates} />}
       </div>
       <div className="hero-bottom">
-        <div className="date-announcement">
-          <span className="date-marker" aria-hidden="true">
-            ↗
-          </span>
-          <p>{event.dates ? formatEventDates(event.dates, language) : t('hero.date')}</p>
-        </div>
         <a href="#about" className="hero-cta">
           <span>{t('hero.cta')}</span>
           <span className="cta-icon">

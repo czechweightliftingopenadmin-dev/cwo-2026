@@ -442,6 +442,15 @@ main:focus {
   letter-spacing: -0.035em;
   margin: 0;
 }
+.hero-event-details {
+  margin-top: 26px;
+  width: 88%;
+}
+.hero-venue {
+  margin: 12px 0 0;
+  font: 450 clamp(24px, 3.4cqw, 36px)/1.2 var(--font-display);
+  letter-spacing: -0.025em;
+}
 .countdown {
   margin-top: 40px;
   width: 88%;
@@ -484,7 +493,7 @@ main:focus {
 }
 .hero-bottom {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   gap: 24px;
   padding: 26px 0 0;
@@ -496,12 +505,8 @@ main:focus {
   align-items: center;
 }
 .date-announcement p {
-  font: 450 clamp(20px, 2.1vw, 32px)/1.2 var(--font-display);
-  max-width: 330px;
+  font: 500 clamp(32px, 5.3cqw, 58px)/1.1 var(--font-display);
   margin: 0;
-}
-.date-marker {
-  font: 300 34px var(--font-sans);
 }
 .hero-cta {
   display: flex;
@@ -868,6 +873,13 @@ main:focus {
     font-size: clamp(20px, 5cqw, 28px);
     line-height: 1.15;
   }
+  .hero-event-details {
+    margin-top: 24px;
+    width: 94%;
+  }
+  .hero-venue {
+    font-size: clamp(18px, 4.5cqw, 26px);
+  }
   .countdown {
     margin-top: 28px;
     width: 94%;
@@ -899,15 +911,11 @@ main:focus {
     gap: 12px;
   }
   .date-announcement p {
-    font-size: 23px;
-    max-width: 210px;
-  }
-  .date-marker {
-    font-size: 24px;
+    font-size: clamp(28px, 7cqw, 38px);
   }
   .hero-cta {
     justify-content: space-between;
-    margin-top: 22px;
+    margin-top: 0;
     font-size: 11px;
   }
   .cta-icon {
