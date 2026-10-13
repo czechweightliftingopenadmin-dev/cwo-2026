@@ -1,0 +1,9 @@
+# Favicon CWO 2026
+
+Motiv navazuje na [logo loňského webu](https://github.com/czechweightliftingopenadmin-dev/cwo_web_lepsi/blob/main/public/logo512.png): abstraktní vzpěrač s činkou v kruhu. Úprava vznikla vestavěným nástrojem imagegen s původním logem jako referencí. Tyrkysová postava a kruh, růžovofialové kotouče a tmavý podklad navazují na nový vizuál.
+
+Výstup je uložen v `public/favicon-2026.png` (256 × 256 px) a `public/favicon-2026.ico` (16, 32, 48, 64 a 256 px). Oba soubory odkazuje `index.html`. PNG i ICO zachovávají průhlednost mimo kruh.
+
+## Zadání pro imagegen
+
+Edit the attached existing Czech Weightlifting Open logo into the 2026 website favicon. Preserve the recognizable original logo identity: one round badge, abstract single weightlifter with one circular head, same sweeping curved torso and lower body, two raised arms, horizontal overhead barbell and large crescent-like end plates. Keep the original silhouette and composition as closely as possible; this is a recolor and simplification for favicon scale, not a new logo. Use a completely flat deep black #101011 circle interior; vivid cyan #72d4e8 athlete silhouette and circular outer ring; recolor the two overhead crescent plates magenta-pink #d34b91 with subtle purple #574375 accents. Echo the new dotted Bitcount identity very subtly with a small number of round details only if they remain crisp; no written text, no lettering, no year. Bold clean flat vector-like graphic with substantial solid shapes so it remains recognizable at 16, 32 and 48 pixels. No gradients, no shadows, no texture, no 3D. Center the badge in a square canvas, fill almost the whole canvas with a tiny margin. Outside the circular badge must be genuinely transparent, inside badge black. Deliver one polished square favicon logo image.

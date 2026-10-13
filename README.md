@@ -38,6 +38,7 @@ GitHub Actions kontroluje formátování, typy, funkční testy, build a desktop
 - `src/locales/cs.ts` a `src/locales/en.ts`: všechny texty a přístupné názvy ovládání. Anglické překlady mají stejnou strukturu kontrolovanou TypeScriptem.
 - `src/config/competition.ts`: hmotnostní kategorie IWF pro seniory a juniory platné od 1. 8. 2026 a odkazy na pravidla. Texty soutěžních kategorií navazují na loňský web, včetně podmínek věku, otevření a slučování kategorií a členství ČSV pro AMČR.
 - `src/styles.css`: designové tokeny pro oba režimy, rozvržení, CSS grafika a responzivní varianty. Bitcount Single a Inter se načítají lokálně z Fontsource včetně českých znaků.
+- `public/favicon-2026.png` a `public/favicon-2026.ico`: letošní barevná úprava loňského vzpěrače v kruhu. ICO obsahuje velikosti 16, 32, 48, 64 a 256 px; zdroj a zadání úpravy jsou v [docs/favicon.md](docs/favicon.md).
 - Pro vlastní grafiku dej export do `public/artwork/` a v konfiguraci nastav například `bannerBackground: '/artwork/banner.webp'`. Obrázek je samostatná vrstva pozadí banneru; obsah a navigace zůstávají v HTML. Soubor musíš přidat do repozitáře. Použij grafiku bez vestavěných textů, které by se opakovaly nebo nešly přeložit.
 
 ## Chování navigace
