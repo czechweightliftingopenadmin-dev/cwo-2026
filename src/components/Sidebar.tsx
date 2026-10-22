@@ -3,14 +3,12 @@ import { useRef } from 'react'
 import type { MouseEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { event } from '../config/event'
+import { visibleSections } from '../config/features'
 import { useNavigation } from '../hooks/useNavigation'
 import { Preferences } from './Preferences'
 
-const sections = [
-  { id: 'home', key: 'nav.home' },
-  { id: 'about', key: 'nav.about' },
-  { id: 'venue', key: 'nav.venue' },
-] as const
+const sections = () =>
+  (['home', ...visibleSections()] as const).map((id) => ({ id, key: `nav.${id}` as const }))
 
 export function Sidebar() {
   const { t } = useTranslation()
@@ -104,7 +102,7 @@ export function Sidebar() {
       </button>
       <div className="nav-content" id="main-navigation" inert={!open} aria-hidden={!open}>
         <nav aria-label={t('nav.label')}>
-          {sections.map(({ id, key }, index) => (
+          {sections().map(({ id, key }, index) => (
             <a key={id} href={`#${id}`} onClick={(e) => navigate(e, id)} className="nav-link">
               <span className="nav-index">0{index + 1}</span>
               <span>{t(key)}</span>

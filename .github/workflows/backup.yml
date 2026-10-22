@@ -1,0 +1,90 @@
+# Database backup into a private repository: cwo-prod every night, cwo-dev on demand.
+# This repository is public, so nothing from the database may be printed to the log;
+# files go only to the private repository, into prod/<date>/ or dev/<date>/.
+# Secrets: SUPABASE_DB_URL (cwo-prod) and SUPABASE_DB_URL_DEV (cwo-dev) session pooler
+# connection strings, BACKUP_REPO (owner/name) and BACKUP_DEPLOY_KEY (private SSH key whose
+# public half is a write deploy key on that repository).
+name: Back up registrations
+on:
+  schedule:
+    - cron: '30 2 * * *'
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Database to back up
+        type: choice
+        options: [prod, dev]
+        default: prod
+  # Lets the dev branch test a changed workflow before it reaches main: backs up cwo-dev
+  # and checks that the backup restores to identical data.
+  push:
+    branches: [dev]
+    paths: [.github/workflows/backup.yml, scripts/backup/**]
+permissions:
+  contents: read
+concurrency: backup
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    env:
+      TARGET: ${{ (github.event_name == 'push' || inputs.target == 'dev') && 'dev' || 'prod' }}
+    steps:
+      - name: Check configuration
+        id: config
+        env:
+          DB_URL: ${{ (github.event_name == 'push' || inputs.target == 'dev') && secrets.SUPABASE_DB_URL_DEV || secrets.SUPABASE_DB_URL }}
+          REPO: ${{ secrets.BACKUP_REPO }}
+          KEY: ${{ secrets.BACKUP_DEPLOY_KEY }}
+        run: |
+          if [ -z "$DB_URL" ] || [ -z "$REPO" ] || [ -z "$KEY" ]; then
+            echo "::warning::Backup secrets for $TARGET are not set; skipping."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check out the scripts
+        if: steps.config.outputs.ready == 'true'
+        uses: actions/checkout@v4
+        with:
+          path: site
+          sparse-checkout: scripts/backup
+
+      - name: Check out the backup repository
+        if: steps.config.outputs.ready == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.BACKUP_REPO }}
+          ssh-key: ${{ secrets.BACKUP_DEPLOY_KEY }}
+          path: backups
+
+      - name: Install PostgreSQL 17 client
+        if: steps.config.outputs.ready == 'true'
+        run: |
+          sudo apt-get install -y -qq postgresql-common > /dev/null
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y > /dev/null
+          sudo apt-get install -y -qq postgresql-client-17 > /dev/null
+          echo /usr/lib/postgresql/17/bin >> "$GITHUB_PATH"
+
+      - name: Dump the database
+        if: steps.config.outputs.ready == 'true'
+        env:
+          DB_URL: ${{ (github.event_name == 'push' || inputs.target == 'dev') && secrets.SUPABASE_DB_URL_DEV || secrets.SUPABASE_DB_URL }}
+        run: bash site/scripts/backup/dump.sh "$DB_URL" "backups/$TARGET/$(TZ=Europe/Prague date +%Y-%m-%d)"
+
+      - name: Restore check (dev only)
+        if: steps.config.outputs.ready == 'true' && env.TARGET == 'dev'
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL_DEV }}
+        run: bash site/scripts/backup/verify-roundtrip.sh "$DB_URL" "backups/dev/$(TZ=Europe/Prague date +%Y-%m-%d)"
+
+      - name: Commit the backup
+        if: steps.config.outputs.ready == 'true'
+        working-directory: backups
+        run: |
+          git config user.name "cwo-backup"
+          git config user.email "cwo-backup@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && exit 0
+          git commit -q -m "Backup $TARGET $(TZ=Europe/Prague date '+%Y-%m-%d %H:%M')"
+          git push -q

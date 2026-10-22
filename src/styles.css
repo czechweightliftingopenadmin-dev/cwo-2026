@@ -20,6 +20,15 @@
   --hero-bottom: #913965;
   --hero-disc: #b55280;
   --hero-green: #a5d081;
+  --danger: #ff8f84;
+  --warning: #f2c46d;
+  --female-bg: #2d1f2c;
+  --female-accent: #e07aa8;
+  --male-bg: #1a2a30;
+  --male-accent: #72d4e8;
+  --field-bg: #141416;
+  --field-border: #5c5963;
+  --field-border-hover: #8d8a95;
   --duration: 250ms;
   background: var(--surface);
   color: var(--ink);
@@ -40,6 +49,15 @@
   --hero-bottom: #efb7cd;
   --hero-disc: #d783ac;
   --hero-green: #436831;
+  --danger: #b3261e;
+  --warning: #8a5a00;
+  --female-bg: #f6e3ec;
+  --female-accent: #a8366f;
+  --male-bg: #dcedf2;
+  --male-accent: #00677d;
+  --field-bg: #ffffff;
+  --field-border: #a59cb0;
+  --field-border-hover: #6f6779;
 }
 
 * {
@@ -569,6 +587,9 @@ main:focus {
   padding: 36px 0;
   border-top: 1px solid var(--line);
 }
+.competition-format > * {
+  min-width: 0;
+}
 .competition-intro {
   border-top: 0;
   padding-top: 0;
@@ -824,6 +845,627 @@ main:focus {
   background: var(--surface);
   font-size: 11px;
 }
+.registration-section {
+  background: var(--surface);
+}
+.startlist-section {
+  background: var(--surface-alt);
+}
+.registration-steps {
+  margin: 0;
+  padding-left: 1.4em;
+  display: grid;
+  gap: 12px;
+  font-size: 17px;
+  line-height: 1.7;
+}
+.apply-link {
+  margin-top: 24px;
+}
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 12px 22px;
+  border: 1px solid var(--ink);
+  border-radius: 2px;
+  background: var(--ink);
+  color: var(--surface);
+  font-size: 15px;
+  font-weight: 600;
+  transition:
+    background var(--duration),
+    color var(--duration);
+}
+.button-secondary {
+  background: transparent;
+  color: var(--ink);
+}
+.button:hover:not(:disabled) {
+  background: var(--cyan);
+  border-color: var(--cyan);
+  color: #101011;
+}
+.button:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+.table-scroll {
+  overflow-x: auto;
+}
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+}
+.data-table th,
+.data-table td {
+  padding: 10px 12px 10px 0;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  font-weight: 400;
+  white-space: nowrap;
+}
+.data-table thead th {
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.data-table .numeric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  padding-right: 0;
+}
+.registration-forms {
+  padding-top: 36px;
+  border-top: 1px solid var(--line);
+}
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 28px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  width: fit-content;
+  max-width: 100%;
+}
+.tabs button {
+  min-height: 44px;
+  padding: 10px 18px;
+  border: 0;
+  border-radius: 2px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 15px;
+}
+.tabs button[aria-pressed='true'] {
+  background: var(--ink);
+  color: var(--surface);
+}
+.window-note {
+  margin: 0 0 24px;
+  color: var(--muted);
+  font-size: 15px;
+}
+.notice {
+  margin: 0;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--cyan);
+  background: var(--surface-alt);
+  font-size: 16px;
+  line-height: 1.6;
+}
+.notice-error {
+  border-left-color: var(--danger);
+}
+.notice-warning {
+  border-left-color: var(--warning);
+}
+.notice p {
+  margin: 0 0 12px;
+}
+.registration-panel {
+  display: grid;
+  gap: 20px;
+  container-type: inline-size;
+}
+.registration-panel > .field-grid {
+  max-width: 640px;
+}
+.registration-panel > p {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.7;
+}
+.panel-title {
+  margin: 0;
+  font: 450 clamp(24px, 2.2vw, 30px)/1.2 var(--font-display);
+}
+.panel-title:focus {
+  outline: none;
+}
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px 48px;
+}
+.choice,
+.checks,
+.athlete-card {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.choice legend,
+.checks legend,
+.field label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.choice-options {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  width: fit-content;
+}
+.choice-options label {
+  position: relative;
+}
+.choice-options input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+  margin: 0;
+}
+.choice-options span {
+  display: block;
+  padding: 8px 14px;
+  border-radius: 2px;
+  color: var(--muted);
+  font-size: 14px;
+  cursor: pointer;
+}
+.choice-options input:checked + span {
+  background: var(--ink);
+  color: var(--surface);
+}
+.choice-options input:focus-visible + span {
+  outline: 3px solid var(--cyan);
+  outline-offset: 2px;
+}
+.check {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 6px 0;
+  font-size: 15px;
+  line-height: 1.6;
+  cursor: pointer;
+}
+.check input {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  margin: 2px 0 0;
+  accent-color: var(--cyan);
+}
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 16px;
+}
+.field input,
+.select-button {
+  width: 100%;
+  min-height: 42px;
+  padding: 9px 12px;
+  border: 1px solid var(--field-border);
+  border-radius: 4px;
+  background-color: var(--field-bg);
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+  transition:
+    border-color var(--duration),
+    box-shadow var(--duration);
+}
+.field input::placeholder {
+  color: var(--muted);
+  opacity: 0.7;
+}
+.field input[type='number'] {
+  appearance: textfield;
+}
+.field input[type='number']::-webkit-inner-spin-button,
+.field input[type='number']::-webkit-outer-spin-button {
+  appearance: none;
+  margin: 0;
+}
+.field input:hover,
+.select-button:hover {
+  border-color: var(--field-border-hover);
+}
+.field input:focus-visible,
+.select-button:focus-visible,
+.select-button[data-open] {
+  outline: none;
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--cyan) 30%, transparent);
+}
+.check input:focus-visible {
+  outline: 3px solid var(--cyan);
+  outline-offset: 2px;
+}
+.select {
+  position: relative;
+}
+.select-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  text-align: left;
+  cursor: pointer;
+}
+.select-button > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.select-button > svg {
+  flex-shrink: 0;
+  color: var(--muted);
+  transition: transform var(--duration);
+}
+.select-button[data-open] > svg {
+  transform: rotate(180deg);
+}
+.select-placeholder {
+  color: var(--muted);
+}
+.select-options {
+  z-index: 60;
+  width: var(--button-width);
+  min-width: 120px;
+  max-height: min(320px, var(--anchor-max-height, 320px));
+  overflow-y: auto;
+  padding: 4px;
+  border: 1px solid var(--field-border);
+  border-radius: 6px;
+  background: var(--field-bg);
+  color: var(--ink);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.28);
+  font-size: 15px;
+}
+.select-options:focus {
+  outline: none;
+}
+.select-options-inline {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  width: max-content;
+  min-width: 100%;
+  max-height: 240px;
+}
+.select-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  line-height: 1.35;
+}
+.select-option > svg {
+  flex-shrink: 0;
+  color: var(--cyan);
+  visibility: hidden;
+}
+.select-option[data-selected] {
+  font-weight: 600;
+}
+.select-option[data-selected] > svg {
+  visibility: visible;
+}
+.select-option[data-focus] {
+  background: color-mix(in srgb, var(--cyan) 18%, transparent);
+}
+.select-option[data-disabled] {
+  opacity: 0.4;
+  cursor: default;
+}
+.date-field {
+  position: relative;
+}
+.field .date-field input {
+  padding-right: 44px;
+}
+.date-field-button {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 34px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--muted);
+  transform: translateY(-50%);
+}
+.date-field-button:hover,
+.date-field-button[data-open] {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--cyan) 14%, transparent);
+}
+.date-field-button:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 0;
+}
+.calendar-panel {
+  z-index: 60;
+  padding: 12px;
+  border: 1px solid var(--field-border);
+  border-radius: 8px;
+  background: var(--field-bg);
+  color: var(--ink);
+  box-shadow: 0 16px 40px rgb(0 0 0 / 0.32);
+}
+.calendar-panel .rdp-root {
+  --rdp-accent-color: var(--cyan);
+  --rdp-accent-background-color: color-mix(in srgb, var(--cyan) 18%, transparent);
+  --rdp-today-color: var(--cyan);
+  --rdp-day-height: 38px;
+  --rdp-day-width: 38px;
+  --rdp-day_button-height: 36px;
+  --rdp-day_button-width: 36px;
+  --rdp-day_button-border-radius: 4px;
+  --rdp-nav_button-height: 34px;
+  --rdp-nav_button-width: 34px;
+  --rdp-nav-height: 38px;
+  font-size: 14px;
+}
+.calendar-panel .rdp-month_caption {
+  height: 38px;
+}
+.calendar-panel .rdp-dropdowns {
+  gap: 6px;
+}
+.calendar-select .select-button {
+  min-height: 34px;
+  padding: 4px 8px 4px 10px;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+.calendar-select .select-option {
+  text-transform: capitalize;
+}
+.calendar-panel .rdp-weekday {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+.calendar-panel .rdp-day_button:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--cyan) 14%, transparent);
+}
+.calendar-panel .rdp-selected .rdp-day_button {
+  border: 0;
+  background: var(--cyan);
+  color: #101011;
+  font-weight: 700;
+}
+.calendar-panel .rdp-chevron {
+  fill: var(--ink);
+}
+.field[data-invalid='true'] input,
+.field[data-invalid='true'] .select-button {
+  border-color: var(--danger);
+}
+.field[data-invalid='true'] input:focus-visible,
+.field[data-invalid='true'] .select-button:focus-visible {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger) 30%, transparent);
+}
+.field-hint,
+.field-error {
+  margin: 4px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.field-hint {
+  color: var(--muted);
+}
+.field-error {
+  color: var(--danger);
+  font-weight: 600;
+}
+.athlete-list {
+  display: grid;
+  gap: 16px;
+  align-items: start;
+}
+/* Team members sit side by side, one column each; an individual gets one wide card. */
+.athlete-list[data-layout='team'] {
+  grid-template-columns: repeat(var(--columns, 4), minmax(0, 1fr));
+}
+.athlete-list[data-layout='team'] .field-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+.athlete-list[data-layout='individual'] .field-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.athlete-card,
+.review-athlete {
+  --sex-bg: var(--surface-alt);
+  --sex-accent: var(--line);
+}
+[data-sex='F'] {
+  --sex-bg: var(--female-bg);
+  --sex-accent: var(--female-accent);
+}
+[data-sex='M'] {
+  --sex-bg: var(--male-bg);
+  --sex-accent: var(--male-accent);
+}
+.athlete-card {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-top: 4px solid var(--sex-accent);
+  background: var(--sex-bg);
+  transition:
+    background var(--duration),
+    border-color var(--duration);
+}
+.athlete-card > legend {
+  float: left;
+  width: 100%;
+  margin: 0;
+  font: 450 18px/1.2 var(--font-display);
+}
+.athlete-card > legend + * {
+  clear: both;
+}
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 16px;
+}
+.honeypot {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+.consent {
+  max-width: 72ch;
+}
+.review {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+.review > .review-list {
+  grid-column: 1 / -1;
+}
+.review-athlete {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-top: 4px solid var(--sex-accent);
+  background: var(--sex-bg);
+}
+.review-athlete h4 {
+  margin: 0 0 10px;
+  font: 450 18px/1.2 var(--font-display);
+}
+.review-athlete .review-list > div {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
+  gap: 8px;
+}
+.review-list {
+  margin: 0;
+  display: grid;
+  gap: 6px;
+}
+.review-list > div {
+  display: grid;
+  grid-template-columns: minmax(0, 220px) minmax(0, 1fr);
+  gap: 16px;
+}
+.review-list dt {
+  color: var(--muted);
+  font-size: 14px;
+}
+.review-list dd {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.access-code-label {
+  color: var(--muted);
+}
+.registration-panel > .access-code {
+  font: 450 clamp(30px, 4vw, 44px)/1.1 var(--font-display);
+  color: var(--cyan);
+  letter-spacing: 0.04em;
+  user-select: all;
+}
+.startlist-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.startlist-meta p {
+  margin: 0;
+}
+.badge {
+  padding: 4px 10px;
+  border: 1px solid var(--cyan);
+  color: var(--cyan);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.startlist-group + .startlist-group {
+  margin-top: 36px;
+}
+.startlist-group h3 {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  margin: 0 0 8px;
+  font: 450 24px/1.2 var(--font-display);
+}
+.startlist-group h3 .muted-copy {
+  font-family: var(--font-sans);
+}
+@container (max-width: 900px) {
+  .athlete-list[data-layout='team'] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .athlete-list[data-layout='individual'] .field-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@container (max-width: 520px) {
+  .athlete-list[data-layout='team'],
+  .athlete-list[data-layout='individual'] .field-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+/* Shown everywhere except production, so the dev site is never mistaken for the real one. */
+.env-banner {
+  margin: 0;
+  padding: 10px 6%;
+  background: #f2c46d;
+  color: #1b1404;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+  text-align: center;
+}
 .footer {
   padding: 26px 6%;
   border-top: 2px solid var(--line);
@@ -1025,6 +1667,32 @@ main:focus {
   .competition-format {
     grid-template-columns: 1fr;
     gap: 28px;
+  }
+  .field-grid,
+  .review-list > div {
+    grid-template-columns: 1fr;
+  }
+  .review-list > div {
+    gap: 0;
+  }
+  .athlete-card,
+  .review-athlete {
+    padding: 14px 12px;
+  }
+  .field input,
+  .select-button {
+    font-size: 16px;
+  }
+  .form-actions .button {
+    flex: 1 1 100%;
+  }
+  .tabs {
+    width: 100%;
+    flex-wrap: nowrap;
+  }
+  .tabs button {
+    flex: 1 1 0;
+    padding-inline: 6px;
   }
   .rules-document {
     gap: 10px;

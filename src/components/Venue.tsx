@@ -1,7 +1,9 @@
 import { MapPin } from 'lucide-react'
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { event } from '../config/event'
+import { event, openStreetMapUrl } from '../config/event'
+import { ErrorBoundary } from './ErrorBoundary'
+import { sectionNumber } from '../config/features'
 
 const VenueMap = lazy(() => import('./VenueMap'))
 
@@ -29,7 +31,7 @@ export function Venue() {
       aria-labelledby="venue-title"
     >
       <div className="section-label">
-        <span>02 /</span>
+        <span>{sectionNumber('venue')} /</span>
         <h2 id="venue-title" className="section-title">
           {t('venue.title')}
         </h2>
@@ -49,9 +51,20 @@ export function Venue() {
           </p>
         </div>
         <div className="venue-map-container" ref={mapContainerRef}>
-          <Suspense fallback={<p className="map-placeholder">{t('venue.mapLoading')}</p>}>
-            {showMap ? <VenueMap /> : <p className="map-placeholder">{t('venue.mapLoading')}</p>}
-          </Suspense>
+          <ErrorBoundary
+            fallback={
+              <div className="map-placeholder">
+                <p>{t('venue.mapError')}</p>
+                <a href={openStreetMapUrl} target="_blank" rel="noopener noreferrer">
+                  {t('venue.openMap')} ↗
+                </a>
+              </div>
+            }
+          >
+            <Suspense fallback={<p className="map-placeholder">{t('venue.mapLoading')}</p>}>
+              {showMap ? <VenueMap /> : <p className="map-placeholder">{t('venue.mapLoading')}</p>}
+            </Suspense>
+          </ErrorBoundary>
         </div>
       </div>
     </section>

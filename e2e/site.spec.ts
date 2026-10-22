@@ -236,3 +236,15 @@ test('mouse hover is temporary, click pins, and Escape stays closed', async ({
   await page.keyboard.press('Tab')
   await expect(page.getByRole('link', { name: /Úvod/ })).toBeFocused()
 })
+
+test('a map chunk that fails to load leaves the rest of the page working', async ({ page }) => {
+  const errors: string[] = []
+  page.on('pageerror', (error) => errors.push(error.message))
+  await page.route('**/assets/VenueMap-*.js', (route) => route.abort())
+  await page.goto('/')
+  await page.locator('#venue').scrollIntoViewIfNeeded()
+  await expect(page.locator('#venue')).toContainText('Mapu se nepodařilo načíst')
+  await expect(page.locator('#venue').getByRole('link', { name: /Otevřít mapu/ })).toBeVisible()
+  await expect(page.locator('#about')).toBeVisible()
+  expect(errors).toEqual([])
+})

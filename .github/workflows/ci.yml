@@ -1,7 +1,7 @@
 name: Check project
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
   pull_request:
 permissions:
   contents: read

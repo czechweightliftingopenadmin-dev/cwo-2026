@@ -15,20 +15,27 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "email:resend": "tsx --env-file=.env.local scripts/resend-confirmation.ts"
   },
   "dependencies": {
     "@fontsource-variable/bitcount-single": "^5.3.0",
     "@fontsource-variable/inter": "^5.3.0",
+    "@headlessui/react": "^2.2.10",
     "@leenguyen/react-flip-clock-countdown": "^1.7.2",
+    "@supabase/supabase-js": "^2.118.0",
     "i18next": "^25.0.0",
     "lucide-react": "^0.468.0",
     "ol": "^10.11.0",
     "react": "^19.3.0",
+    "react-day-picker": "^9.14.0",
     "react-dom": "^19.3.0",
-    "react-i18next": "^16.0.0"
+    "react-i18next": "^16.0.0",
+    "resend": "^6.34.1",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.11",
     "@playwright/test": "^1.56.0",
     "@tailwindcss/vite": "^4.3.3",
     "@testing-library/jest-dom": "^6.9.0",
@@ -41,6 +48,7 @@
     "jsdom": "^27.0.0",
     "prettier": "^3.9.10",
     "tailwindcss": "^4.3.3",
+    "tsx": "^4.23.15",
     "typescript": "~5.9.0",
     "vite": "^8.3.4",
     "vitest": "^4.0.0"

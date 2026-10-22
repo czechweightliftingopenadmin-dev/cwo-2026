@@ -5,7 +5,10 @@ import { Sidebar } from './components/Sidebar'
 import { Hero } from './components/Hero'
 import { About } from './components/About'
 import { Venue } from './components/Venue'
+import { Registration } from './components/registration/Registration'
+import { Startlist } from './components/registration/Startlist'
 import { event } from './config/event'
+import { isProduction, isVisible } from './config/features'
 
 export default function App() {
   const { t, i18n } = useTranslation()
@@ -25,8 +28,15 @@ export default function App() {
       </a>
       <Sidebar />
       <main id="main" tabIndex={-1} className="page-content">
+        {!isProduction && (
+          <p className="env-banner" role="note">
+            {t('env.banner')}
+          </p>
+        )}
         <Hero />
         <About />
+        {isVisible('registration') && <Registration />}
+        {isVisible('startlist') && <Startlist />}
         <Venue />
         <footer className="footer">
           <span className="footer-brand">

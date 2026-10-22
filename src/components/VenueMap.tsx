@@ -8,7 +8,7 @@ import OSM from 'ol/source/OSM'
 import { fromLonLat } from 'ol/proj'
 import { defaults as defaultInteractions } from 'ol/interaction/defaults'
 import 'ol/ol.css'
-import { event } from '../config/event'
+import { event, openStreetMapUrl } from '../config/event'
 
 export default function VenueMap() {
   const { t } = useTranslation()
@@ -16,8 +16,6 @@ export default function VenueMap() {
   const markerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<Map | null>(null)
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
-  const [longitude, latitude] = event.coordinates
-  const mapUrl = `https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}#map=17/${latitude}/${longitude}`
 
   useEffect(() => {
     if (!targetRef.current || !markerRef.current) return
@@ -79,7 +77,7 @@ export default function VenueMap() {
           {t(status === 'loading' ? 'venue.mapLoading' : 'venue.mapError')}
         </p>
       )}
-      <a className="map-external" href={mapUrl} target="_blank" rel="noopener noreferrer">
+      <a className="map-external" href={openStreetMapUrl} target="_blank" rel="noopener noreferrer">
         {t('venue.openMap')} ↗
       </a>
       <span className="map-attribution">

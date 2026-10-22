@@ -1,0 +1,79 @@
+# Restore drill: loads a backup into cwo-dev to prove it can be restored. Never touches
+# cwo-prod. Replaces all registration data in cwo-dev; a prod backup brings real personal
+# data into dev, so run "Back up registrations" for dev and restore it, or clean dev after.
+name: Restore drill into cwo-dev
+on:
+  workflow_dispatch:
+    inputs:
+      source:
+        description: Which backups to restore from
+        type: choice
+        options: [dev, prod]
+        default: dev
+      date:
+        description: Backup date (YYYY-MM-DD); empty means the latest
+        required: false
+permissions:
+  contents: read
+concurrency: backup
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    env:
+      SOURCE: ${{ inputs.source || 'dev' }}
+      DATE: ${{ inputs.date }}
+    steps:
+      - name: Check configuration
+        id: config
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL_DEV }}
+          REPO: ${{ secrets.BACKUP_REPO }}
+          KEY: ${{ secrets.BACKUP_DEPLOY_KEY }}
+        run: |
+          if [ -z "$DB_URL" ] || [ -z "$REPO" ] || [ -z "$KEY" ]; then
+            echo "::warning::Restore secrets are not set; skipping."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check out the scripts
+        if: steps.config.outputs.ready == 'true'
+        uses: actions/checkout@v4
+        with:
+          path: site
+          sparse-checkout: scripts/backup
+
+      - name: Check out the backup repository
+        if: steps.config.outputs.ready == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.BACKUP_REPO }}
+          ssh-key: ${{ secrets.BACKUP_DEPLOY_KEY }}
+          path: backups
+
+      - name: Install PostgreSQL 17 client
+        if: steps.config.outputs.ready == 'true'
+        run: |
+          sudo apt-get install -y -qq postgresql-common > /dev/null
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y > /dev/null
+          sudo apt-get install -y -qq postgresql-client-17 > /dev/null
+          echo /usr/lib/postgresql/17/bin >> "$GITHUB_PATH"
+
+      - name: Restore into cwo-dev
+        if: steps.config.outputs.ready == 'true'
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL_DEV }}
+        run: |
+          set -euo pipefail
+          if [ -n "$DATE" ]; then
+            dir="backups/$SOURCE/$DATE"
+          else
+            dir=$(ls -d backups/"$SOURCE"/*/ 2>/dev/null | sort | tail -1)
+          fi
+          if [ -z "$dir" ] || [ ! -f "$dir/data.sql.gz" ]; then
+            echo "::error::No $SOURCE backup found${DATE:+ for $DATE}"
+            exit 1
+          fi
+          echo "Restoring $dir"
+          bash site/scripts/backup/restore.sh "$DB_URL" "$dir"

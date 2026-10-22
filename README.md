@@ -1,6 +1,6 @@
 # Czech Weightlifting Open 2026
 
-Úvodní web pro CWO 2026. React, TypeScript (strict), Vite a Tailwind CSS. CZ/EN, dark/light režim, vertikální navigace, překlápěcí odpočet a mapa místa konání. Bez backendu a bez fotografií minulých ročníků.
+Úvodní web pro CWO 2026. React, TypeScript (strict), Vite a Tailwind CSS. CZ/EN, dark/light režim, vertikální navigace, překlápěcí odpočet, mapa místa konání, registrace závodníků a startovní listina. Backend tvoří Vercel Functions v `api/` se Supabase a Resend. Bez fotografií minulých ročníků.
 
 ## Spuštění
 
@@ -11,7 +11,7 @@ npm ci
 npm run dev
 ```
 
-Web se spustí na `http://localhost:8080` a automaticky se otevře ve výchozím prohlížeči. Pokud je port 8080 obsazený, server ohlásí chybu místo přepnutí na jiný port. Prohlížečové testy používají vlastní server na portu 4173 bez automatického otevírání prohlížeče.
+Web se spustí na `http://localhost:8080` a automaticky se otevře ve výchozím prohlížeči. Pokud je port 8080 obsazený, server ohlásí chybu místo přepnutí na jiný port. Prohlížečové testy sestaví produkční build a spustí nad ním `vite preview` na portu 4173 bez automatického otevírání prohlížeče.
 
 ## Kontroly a sestavení
 
@@ -31,6 +31,42 @@ npm run test:e2e
 ```
 
 GitHub Actions kontroluje formátování, typy, funkční testy, build a desktopovou i mobilní verzi v prohlížeči. Kód sjednotíš pomocí `npm run format`. Projekt zatím nemá automatické nasazení.
+
+## Nasazení na Vercel
+
+Web je veřejně dostupný na [czechweightliftingopen.cz](https://czechweightliftingopen.cz) i [www.czechweightliftingopen.cz](https://www.czechweightliftingopen.cz). Obě domény jsou přiřazené k projektu `cwo-2026` v týmu `cwo2`, takže další produkční nasazení aktualizuje i tyto adresy. Funguje také [cwo-2026.vercel.app](https://cwo-2026.vercel.app). Původní projekt `cwo-web-lepsi` zůstává dostupný na [cwo-web-lepsi-one.vercel.app](https://cwo-web-lepsi-one.vercel.app).
+
+Konfigurace v `vercel.json` nastavuje Vite, instalaci přes `npm ci`, build přes `npm run build` a výstup `dist/`. Pro další ruční nasazení se přihlas do Vercel CLI účtem s přístupem k týmu a spusť:
+
+```sh
+vercel link --yes --project cwo-2026 --scope cwo2
+vercel deploy --prod --scope cwo2
+```
+
+Místní propojení v `.vercel/` a soubory `.env.*` jsou ignorované Gitem. Vercel je napojený na GitHub: **push do `main` se nasadí na produkci**, push do `dev` na stálou dev adresu [cwo-2026-git-dev-cwo2.vercel.app](https://cwo-2026-git-dev-cwo2.vercel.app) s testovací databází. Podrobnosti jsou v [docs/registrace.md](docs/registrace.md).
+
+## Registrace
+
+Formulář, změnu registrace a startovní listinu obsluhují funkce v `api/`. Data ukládají do Supabase, potvrzení posílají přes Resend. Prohlížeč se k databázi nepřipojuje. Pravidla validace sdílí web i server v `src/lib/registration/schema.ts`, termíny, ceny a seznam škol jsou v `src/config/registration.ts`. Které sekce a formuláře jsou vidět nebo otevřené, přepíná `src/config/features.ts` (`'auto'` podle termínů, `'on'`, `'off'`). Databázi popisuje migrace v `supabase/migrations/`; testy ji spouštějí v PGlite (Postgres v paměti).
+
+Nastavení služeb, správa dat, startovka, zálohy a obnova po chybě jsou popsané v [docs/registrace.md](docs/registrace.md). Lokální vývoj s API: `vercel env pull .env.local` a potom `vercel dev`. Samotné `npm run dev` spustí jen web; formulář se zobrazí, ale odeslání selže.
+
+## Práce na jiném počítači
+
+Tajné hodnoty nejsou v Gitu. Na novém počítači:
+
+```sh
+git clone https://github.com/czechweightliftingopenadmin-dev/cwo-2026.git
+cd cwo-2026
+git checkout dev
+npm ci
+npx vercel login                                  # účet czechweightliftingopenadmin-dev
+npx vercel link --yes --project cwo-2026 --scope cwo2
+npx vercel env pull .env.local                    # adresa a klíč dev databáze
+npx vercel dev                                    # web i API, databáze cwo-dev
+```
+
+`.env.example` je šablona proměnných bez hodnot a je v Gitu. `.env.local` obsahuje skutečné hodnoty, Git ho ignoruje a existuje jen na daném počítači. `vercel env pull` ho přepíše, takže hesla databází si drž ve správci hesel a případně je do něj po stažení vlož znovu. Hesla jsou potřeba jen pro migrace (`npx supabase login` a `npx supabase link`) a ruční obnovu ze zálohy.
 
 ## Úpravy obsahu a vzhledu
 
@@ -55,4 +91,4 @@ Mapa používá OpenLayers a OpenStreetMap jako loňský web. Načítá se až p
 
 Sekce „O soutěži“ obsahuje pravidla a soutěžní řád ČSV: stejné PDF z roku 2019 jako loňský web, uložené v `public/documents/csv-technicka-a-soutezni-pravidla-2019.pdf`. Vydání je uvedeno přímo u odkazu; vedle něj je odkaz na aktuální pravidla na oficiálním webu IWF. Při aktualizaci PDF změň soubor, cestu v `src/config/competition.ts` i označení vydání v obou překladech.
 
-Registrace, galerie, startovní listiny, harmonogram, propozice AMČR, kontakty a loga partnerů se doplní později. Loňský web zůstává samostatný a tento projekt jej nemění.
+Galerie, harmonogram, propozice AMČR, kontakty a loga partnerů se doplní později. Loňský web zůstává samostatný a tento projekt jej nemění.

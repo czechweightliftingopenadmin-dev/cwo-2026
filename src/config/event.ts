@@ -34,3 +34,6 @@ export const event: EventConfig = {
   coordinates: [16.5687, 49.1785],
   bannerBackground: '/banner.jpg',
 }
+
+const [longitude, latitude] = event.coordinates
+export const openStreetMapUrl = `https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}#map=17/${latitude}/${longitude}`

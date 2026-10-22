@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { ArrowUpRight, FileText } from 'lucide-react'
 import { bodyweightCategories, rulesDocuments } from '../config/competition'
+import { sectionNumber } from '../config/features'
 
 export function About() {
   const { t } = useTranslation()
@@ -13,7 +14,7 @@ export function About() {
     >
       <div className="about-content">
         <div className="section-label">
-          <span>01 /</span>
+          <span>{sectionNumber('about')} /</span>
           <h2 id="about-title" className="section-title">
             {t('about.title')}
           </h2>
