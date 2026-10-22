@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { event } from '../config/event'
 import { visibleSections } from '../config/features'
 import { useNavigation } from '../hooks/useNavigation'
+import { goToSection } from '../lib/scroll'
 import { Preferences } from './Preferences'
 
 const sections = () =>
@@ -18,15 +19,8 @@ export function Sidebar() {
   function navigate(e: MouseEvent<HTMLAnchorElement>, id: string) {
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
     e.preventDefault()
-    const target = document.getElementById(id)
     close(false)
-    target?.focus({ preventScroll: true })
-    target?.scrollIntoView({
-      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
-        ? 'instant'
-        : 'smooth',
-    })
-    history.replaceState(null, '', `#${id}`)
+    goToSection(id)
   }
 
   return (

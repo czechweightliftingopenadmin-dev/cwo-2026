@@ -24,6 +24,13 @@ export const cs = {
     location: 'Brno · Česká republika',
     edition: 'Ročník {{year}}',
     date: 'Termín brzy oznámíme',
+    register: 'Registrace',
+    addToCalendar: 'Přidat do kalendáře',
+    calendarGoogle: 'Google Kalendář',
+    calendarWhole: 'Celá soutěž',
+    calendarDay: 'den {{number}}',
+    calendarIcs: 'Apple, Outlook a další (.ics)',
+    calendarDescription: 'Vzpěračská soutěž Czech Weightlifting Open v Brně. Více na {{url}}',
   },
   about: {
     title: 'O soutěži',

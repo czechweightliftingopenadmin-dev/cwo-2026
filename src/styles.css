@@ -27,6 +27,8 @@
   --male-bg: #1a2a30;
   --male-accent: #72d4e8;
   --field-bg: #141416;
+  /* A deeper cyan than --cyan, so white text on hovered buttons stays readable (4.8:1). */
+  --button-hover: #0e7c95;
   --field-border: #5c5963;
   --field-border-hover: #8d8a95;
   --duration: 250ms;
@@ -56,6 +58,7 @@
   --male-bg: #dcedf2;
   --male-accent: #00677d;
   --field-bg: #ffffff;
+  --button-hover: #00677d;
   --field-border: #a59cb0;
   --field-border-hover: #6f6779;
 }
@@ -532,6 +535,63 @@ main:focus {
   padding: 26px 0 0;
   border-top: 1px solid currentColor;
 }
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 12px;
+}
+/* The hero sits on a photo, so its buttons use the hero ink instead of the page tokens. */
+.hero-actions .button {
+  border-color: var(--hero-ink);
+  background: var(--hero-ink);
+  color: #1b1325;
+}
+.hero-actions .button-secondary {
+  background: transparent;
+  color: var(--hero-ink);
+}
+.hero-actions .button[data-open] {
+  background: var(--hero-ink);
+  color: #1b1325;
+}
+.calendar-choices ul {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.calendar-choices li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 6px 4px 6px 8px;
+}
+.calendar-choice-label {
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.calendar-choice-links {
+  display: flex;
+  gap: 6px;
+}
+.calendar-choice-links a {
+  padding: 7px 10px;
+  border: 1px solid var(--field-border);
+  border-radius: 4px;
+  font-size: 13px;
+  white-space: nowrap;
+  transition:
+    border-color var(--duration),
+    background var(--duration);
+}
+.calendar-choice-links a:hover {
+  border-color: var(--cyan);
+  background: color-mix(in srgb, var(--cyan) 14%, transparent);
+}
 .date-announcement {
   display: flex;
   gap: 15px;
@@ -884,9 +944,9 @@ main:focus {
   color: var(--ink);
 }
 .button:hover:not(:disabled) {
-  background: var(--cyan);
-  border-color: var(--cyan);
-  color: #101011;
+  background: var(--button-hover);
+  border-color: var(--button-hover);
+  color: #ffffff;
 }
 .button:disabled {
   opacity: 0.6;
@@ -1642,6 +1702,11 @@ main:focus {
   .hero-bottom {
     display: block;
     padding-top: 20px;
+  }
+  .hero-actions > *,
+  .calendar-popover .button {
+    flex: 1 1 100%;
+    width: 100%;
   }
   .date-announcement {
     gap: 12px;

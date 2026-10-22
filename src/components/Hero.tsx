@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { event } from '../config/event'
 import { formatEventDates } from '../lib/countdown'
 import { Countdown } from './Countdown'
+import { HeroActions } from './HeroActions'
 
 export function Hero() {
   const { t, i18n } = useTranslation()
@@ -51,7 +52,9 @@ export function Hero() {
         </div>
         {event.dates && <Countdown dates={event.dates} />}
       </div>
-      <div className="hero-bottom" aria-hidden="true" />
+      <div className="hero-bottom">
+        <HeroActions />
+      </div>
     </section>
   )
 }

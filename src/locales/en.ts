@@ -28,6 +28,14 @@ export const en: TranslationShape<typeof cs> = {
     location: 'Brno · Czech Republic',
     edition: '{{year}} edition',
     date: 'Dates coming soon',
+    register: 'Register',
+    addToCalendar: 'Add to calendar',
+    calendarGoogle: 'Google Calendar',
+    calendarWhole: 'Whole competition',
+    calendarDay: 'day {{number}}',
+    calendarIcs: 'Apple, Outlook and others (.ics)',
+    calendarDescription:
+      'Czech Weightlifting Open, a weightlifting competition in Brno. More at {{url}}',
   },
   about: {
     title: 'About the event',

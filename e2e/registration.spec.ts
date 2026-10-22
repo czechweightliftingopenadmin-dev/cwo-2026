@@ -37,6 +37,29 @@ test('sections and navigation follow the switches', async ({ page }) => {
   await expect(page.locator('#about .section-label > span')).toHaveText('01 /')
 })
 
+test('the hero links to registration and adds the event to a calendar', async ({ page }) => {
+  await open(page, duringRegistration)
+  await page.goto('/')
+  const hero = page.locator('#home')
+  if (isVisible('registration', duringRegistration)) {
+    await hero.getByRole('link', { name: 'Registrace' }).click()
+    await expect(page.locator('#registration')).toBeFocused()
+    await expect(page).toHaveURL(/#registration$/)
+  }
+  await hero.getByRole('button', { name: 'Přidat do kalendáře' }).click()
+  const monday = page.getByRole('link', { name: 'Pondělí 21. 12.: Google Kalendář' })
+  await expect(monday).toHaveAttribute('href', /dates=20261221%2F20261222/)
+  await expect(page.getByRole('link', { name: 'Úterý 22. 12.: Google Kalendář' })).toHaveAttribute(
+    'href',
+    /dates=20261222%2F20261223/,
+  )
+  const whole = page.getByRole('link', { name: /^Celá soutěž: Apple/ })
+  await expect(whole).toHaveAttribute('download', 'cwo-2026.ics')
+  const href = decodeURIComponent((await whole.getAttribute('href')) ?? '')
+  expect(href).toContain('DTSTART;VALUE=DATE:20261221')
+  expect(href).toContain('DTEND;VALUE=DATE:20261223')
+})
+
 test('an individual registers after fixing errors and reviewing the data', async ({ page }) => {
   test.skip(!formOpen, 'Registration form is switched off')
   let sent: Record<string, unknown> | undefined
