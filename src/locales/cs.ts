@@ -160,7 +160,7 @@ export const cs = {
     amcrMember: 'Také AM ČR',
     university: 'Vysoká škola',
     consent:
-      'Souhlasím se zpracováním uvedených osobních údajů pro organizaci soutěže a se zveřejněním jména, roku narození, kategorie, dvojboje, týmu a školy ve startovní listině.',
+      'Souhlasím se zpracováním uvedených osobních údajů pro organizaci soutěže a se zveřejněním jména, kategorie, dvojboje, týmu a školy ve startovní listině.',
     website: 'Nevyplňuj',
     continue: 'Pokračovat ke kontrole',
     errorSummary_one: 'Oprav prosím {{count}} chybu ve formuláři.',

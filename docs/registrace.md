@@ -46,7 +46,7 @@ Termíny jsou v [src/config/registration.ts](../src/config/registration.ts). Ser
 
 ```ts
 const production = {
-  registrationSection: 'auto', // sekce Registrace v menu a na stránce
+  registrationSection: 'on', // sekce Registrace v menu a na stránce
   registrationForm: 'auto', // registrační formulář
   editForm: 'auto', // změna kategorie a dvojboje
   startlist: 'auto', // sekce Startovní listina
@@ -63,7 +63,7 @@ const testing = {
 - `'on'`: zobrazeno nebo otevřeno hned, bez ohledu na datum.
 - `'off'`: skryto nebo zavřeno.
 
-Na produkci tak registrace ani startovka zatím nejsou vidět a objeví se samy v termínu. Na devu je vidět a jde vyzkoušet všechno hned. Kód je v obou prostředích stejný.
+Na produkci je sekce Registrace vidět hned (postup a startovné). Formuláře a tlačítko „Registrace“ v úvodu se objeví samy 1. 11., do té doby sekce ukazuje, kdy se registrace otevře. Startovka se objeví sama 7. 12. Na devu je vidět a jde vyzkoušet všechno hned. Kód je v obou prostředích stejný.
 
 Skrytá sekce zmizí ze stránky i z menu a čísla ostatních sekcí se posunou. Formuláře se podle stejného souboru otevírají i na serveru: `registrationForm: 'on'` znamená, že registraci jde opravdu odeslat. Po změně stačí změnu nasadit (merge do `main`).
 
@@ -215,5 +215,5 @@ V [src/config/features.ts](../src/config/features.ts) nastav v configu `producti
 
 - Změna registrace vyžaduje číslo faktury nebo kód registrace **a** e-mail některého závodníka v registraci. Při neúspěchu server neprozradí, která z těch dvou věcí nesedí. Pokusy jsou omezené na 10 za 15 minut z jedné adresy.
 - O každé změně přijde e-mail všem závodníkům v registraci.
-- Startovka obsahuje jen jméno, ročník, pohlaví, kategorii, dvojboj, tým, školu a soutěž. Kontakty ani datum narození nezveřejňuje.
+- Startovka obsahuje jen jméno, pohlaví, kategorii, dvojboj, tým, školu a soutěž. Kontakty ani datum či rok narození nezveřejňuje (snímek v databázi rok narození má, API ho vynechává).
 - Skryté pole formuláře zachytí jednoduché boty. Server jim odpoví jako úspěch, ale nic neuloží.

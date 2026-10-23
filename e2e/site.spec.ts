@@ -184,6 +184,28 @@ test('weigh-in reference reaches rules and the linked ČSV PDF is available', as
   expect((await response.body()).subarray(0, 5).toString()).toBe('%PDF-')
 })
 
+test('competition parts fold to their titles, and the weigh-in reference reopens the rules', async ({
+  page,
+}) => {
+  await page.goto('/')
+  const about = page.locator('#about')
+  const teams = about.getByRole('button', { name: 'CWO Team OPEN' })
+  await expect(teams).toHaveAttribute('aria-expanded', 'true')
+  await expect(about.getByText('až 4 členové')).toBeVisible()
+  await teams.click()
+  await expect(teams).toHaveAttribute('aria-expanded', 'false')
+  await expect(about.locator('#teams-content')).toBeHidden()
+  await expect(about.getByText('až 4 členové')).toHaveCount(0)
+  await teams.click()
+  await expect(about.locator('#teams-content')).toBeVisible()
+
+  await about.getByRole('button', { name: 'Pravidla' }).click()
+  await expect(about.locator('#rules-content')).toBeHidden()
+  await page.locator('.rules-reference').click()
+  await expect(about.locator('#rules-content')).toBeVisible()
+  await expect(page.locator('#rules')).toBeFocused()
+})
+
 test('reduced motion disables navigation animation', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.goto('/')

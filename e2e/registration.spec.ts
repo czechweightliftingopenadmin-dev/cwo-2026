@@ -1,6 +1,11 @@
 import { expect, test } from '@playwright/test'
 import type { Locator, Page, Route } from '@playwright/test'
-import { editFormState, isVisible, registrationFormState } from '../src/config/features'
+import {
+  editFormState,
+  isVisible,
+  registrationFormState,
+  showRegisterButton,
+} from '../src/config/features'
 
 // Expectations follow src/config/features.ts, so flipping a switch never breaks the tests.
 const duringRegistration = new Date('2026-11-20T12:00:00+01:00')
@@ -56,7 +61,7 @@ test('the hero links to registration and adds the event to a calendar', async ({
   await open(page, duringRegistration)
   await page.goto('/')
   const hero = page.locator('#home')
-  if (isVisible('registration', duringRegistration)) {
+  if (isVisible('registration', duringRegistration) && showRegisterButton(duringRegistration)) {
     await hero.getByRole('link', { name: 'Registrace' }).click()
     await expect(page.locator('#registration')).toBeFocused()
     await expect(page).toHaveURL(/#registration$/)
@@ -241,7 +246,6 @@ test('the start list shows the latest snapshot by category', async ({ page }) =>
   const entry = {
     kind: 'individual',
     teamName: null,
-    birthYear: 2000,
     cwo: true,
     amcr: false,
     university: null,

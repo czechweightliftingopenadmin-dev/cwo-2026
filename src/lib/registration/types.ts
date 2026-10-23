@@ -51,7 +51,6 @@ export interface StartlistEntry {
   teamName: string | null
   firstName: string
   lastName: string
-  birthYear: number
   sex: Sex
   weightClass: string
   total: number

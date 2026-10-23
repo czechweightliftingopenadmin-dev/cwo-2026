@@ -167,7 +167,7 @@ export const en: TranslationShape<typeof cs> = {
     amcrMember: 'AM ČR as well',
     university: 'University',
     consent:
-      'I agree to the processing of these personal details for organising the competition, and to my name, year of birth, category, total, team and university appearing in the start list.',
+      'I agree to the processing of these personal details for organising the competition, and to my name, category, total, team and university appearing in the start list.',
     website: 'Leave empty',
     continue: 'Continue to review',
     errorSummary_one: 'Please fix {{count}} error in the form.',

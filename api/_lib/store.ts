@@ -134,7 +134,10 @@ export function createSupabaseStore(): Store {
       return {
         publishedAt: data.published_at as string,
         isFinal: data.is_final as boolean,
-        entries: data.data as StartlistEntry[],
+        // Snapshots also hold the birth year; the public start list leaves it out.
+        entries: (data.data as (StartlistEntry & { birthYear?: number })[]).map(
+          ({ birthYear: _birthYear, ...entry }) => entry,
+        ),
       }
     },
   }

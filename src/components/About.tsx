@@ -1,10 +1,85 @@
+import { useState } from 'react'
+import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ArrowUpRight, FileText } from 'lucide-react'
+import { ArrowUpRight, ChevronDown, FileText } from 'lucide-react'
 import { bodyweightCategories, rulesDocuments } from '../config/competition'
 import { sectionNumber } from '../config/features'
 
+type Part = 'intro' | 'individuals' | 'teams' | 'academic' | 'rules'
+
+interface PartProps {
+  id: Part
+  title: string
+  open: boolean
+  onToggle: () => void
+  /** Shown under the title, only while open. */
+  aside?: ReactNode
+  className?: string
+  copyClassName?: string
+  children: ReactNode
+}
+
+/** A subsection that folds to its title; open, it keeps the two-column layout. */
+function CompetitionPart({
+  id,
+  title,
+  open,
+  onToggle,
+  aside,
+  className,
+  copyClassName,
+  children,
+}: PartProps) {
+  return (
+    <article
+      // The rules are a link target, so the reference can reach and focus them.
+      id={id === 'rules' ? 'rules' : undefined}
+      tabIndex={id === 'rules' ? -1 : undefined}
+      className={['competition-format', className].filter(Boolean).join(' ')}
+      data-open={open}
+      aria-labelledby={`${id}-title`}
+    >
+      <div>
+        <h3 id={`${id}-title`}>
+          <button
+            type="button"
+            className="part-toggle"
+            aria-expanded={open}
+            aria-controls={`${id}-content`}
+            onClick={onToggle}
+          >
+            <span>{title}</span>
+            <ChevronDown className="part-chevron" size={24} aria-hidden="true" />
+          </button>
+        </h3>
+        {open && aside}
+      </div>
+      <div
+        id={`${id}-content`}
+        className={['competition-copy', copyClassName].filter(Boolean).join(' ')}
+        hidden={!open}
+      >
+        {children}
+      </div>
+    </article>
+  )
+}
+
 export function About() {
   const { t } = useTranslation()
+  const [open, setOpen] = useState<Record<Part, boolean>>({
+    intro: true,
+    individuals: true,
+    teams: true,
+    academic: true,
+    rules: true,
+  })
+  const part = (id: Part) => ({
+    id,
+    open: open[id],
+    onToggle: () => setOpen((current) => ({ ...current, [id]: !current[id] })),
+  })
+
   return (
     <section
       id="about"
@@ -19,103 +94,94 @@ export function About() {
             {t('about.title')}
           </h2>
         </div>
-        <div className="competition-format competition-intro">
-          <h3>{t('about.introTitle')}</h3>
-          <div className="competition-copy">
-            <p>{t('about.text')}</p>
-            <p>{t('about.details')}</p>
-          </div>
-        </div>
+        <CompetitionPart
+          {...part('intro')}
+          title={t('about.introTitle')}
+          className="competition-intro"
+        >
+          <p>{t('about.text')}</p>
+          <p>{t('about.details')}</p>
+        </CompetitionPart>
         <div className="competition-formats">
-          <article className="competition-format" aria-labelledby="individuals-title">
-            <div>
-              <h3 id="individuals-title">{t('about.individuals.title')}</h3>
-            </div>
-            <div className="competition-copy">
-              <p>{t('about.individuals.description')}</p>
-              <h4>{t('about.individuals.categoriesTitle')}</h4>
-              <dl className="bodyweight-categories">
-                {(['women', 'men'] as const).map((group) => (
-                  <div className="bodyweight-group" key={group}>
-                    <dt>{t(`about.individuals.${group}`)}</dt>
-                    <dd>
-                      <p>{t(`about.individuals.${group}Description`)}</p>
-                      <ul className="category-list">
-                        {bodyweightCategories[group].map((weight) => (
-                          <li key={weight}>{weight}&nbsp;kg</li>
-                        ))}
-                      </ul>
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-              <p>{t('about.individuals.minimumParticipants')}</p>
-              <p>{t('about.individuals.scoring')}</p>
-              <a className="rules-reference" href="#rules">
-                {t('about.individuals.weighInRules')}
-              </a>
-            </div>
-          </article>
-          <article className="competition-format" aria-labelledby="teams-title">
-            <div>
-              <h3 id="teams-title">{t('about.teams.title')}</h3>
+          <CompetitionPart {...part('individuals')} title={t('about.individuals.title')}>
+            <p>{t('about.individuals.description')}</p>
+            <h4>{t('about.individuals.categoriesTitle')}</h4>
+            <dl className="bodyweight-categories">
+              {(['women', 'men'] as const).map((group) => (
+                <div className="bodyweight-group" key={group}>
+                  <dt>{t(`about.individuals.${group}`)}</dt>
+                  <dd>
+                    <p>{t(`about.individuals.${group}Description`)}</p>
+                    <ul className="category-list">
+                      {bodyweightCategories[group].map((weight) => (
+                        <li key={weight}>{weight}&nbsp;kg</li>
+                      ))}
+                    </ul>
+                  </dd>
+                </div>
+              ))}
+            </dl>
+            <p>{t('about.individuals.minimumParticipants')}</p>
+            <p>{t('about.individuals.scoring')}</p>
+            <a
+              className="rules-reference"
+              href="#rules"
+              onClick={() => setOpen((current) => ({ ...current, rules: true }))}
+            >
+              {t('about.individuals.weighInRules')}
+            </a>
+          </CompetitionPart>
+          <CompetitionPart
+            {...part('teams')}
+            title={t('about.teams.title')}
+            aside={
               <div className="competition-tags">
                 <span>{t('about.teams.members')}</span>
               </div>
-            </div>
-            <div className="competition-copy">
-              <p>{t('about.teams.description')}</p>
-              <h4>{t('about.teams.compositionTitle')}</h4>
-              <ul className="team-compositions">
-                {(['womenOnly', 'threeWomen', 'balanced', 'threeMen', 'menOnly'] as const).map(
-                  (composition) => (
-                    <li key={composition}>{t(`about.teams.${composition}`)}</li>
-                  ),
-                )}
-              </ul>
-              <p>{t('about.teams.scoring')}</p>
-            </div>
-          </article>
-          <article className="competition-format" aria-labelledby="academic-title">
-            <h3 id="academic-title">{t('about.academic.title')}</h3>
-            <div className="competition-copy">
-              <p>{t('about.academic.description')}</p>
-            </div>
-          </article>
-          <article
-            id="rules"
-            tabIndex={-1}
-            className="competition-format"
-            aria-labelledby="rules-title"
+            }
           >
-            <h3 id="rules-title">{t('about.rules.title')}</h3>
-            <div className="competition-copy rules-documents">
-              {(['csv', 'iwf'] as const).map((document) => (
-                <a
-                  key={document}
-                  className="rules-document"
-                  href={rulesDocuments[document]}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-describedby="rules-new-tab"
-                >
-                  <FileText size={22} aria-hidden="true" />
-                  <span>
-                    <span className="rules-document-title">
-                      {t(`about.rules.${document}Document`)}
-                    </span>
-                    <span className="rules-document-meta">
-                      {t(`about.rules.${document}Edition`)}
-                    </span>
+            <p>{t('about.teams.description')}</p>
+            <h4>{t('about.teams.compositionTitle')}</h4>
+            <ul className="team-compositions">
+              {(['womenOnly', 'threeWomen', 'balanced', 'threeMen', 'menOnly'] as const).map(
+                (composition) => (
+                  <li key={composition}>{t(`about.teams.${composition}`)}</li>
+                ),
+              )}
+            </ul>
+            <p>{t('about.teams.scoring')}</p>
+          </CompetitionPart>
+          <CompetitionPart {...part('academic')} title={t('about.academic.title')}>
+            <p>{t('about.academic.description')}</p>
+          </CompetitionPart>
+          <CompetitionPart
+            {...part('rules')}
+            title={t('about.rules.title')}
+            copyClassName="rules-documents"
+          >
+            {(['csv', 'iwf'] as const).map((document) => (
+              <a
+                key={document}
+                className="rules-document"
+                href={rulesDocuments[document]}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-describedby="rules-new-tab"
+              >
+                <FileText size={22} aria-hidden="true" />
+                <span>
+                  <span className="rules-document-title">
+                    {t(`about.rules.${document}Document`)}
                   </span>
-                  <ArrowUpRight size={20} aria-hidden="true" />
-                </a>
-              ))}
-              <span id="rules-new-tab" className="sr-only">
-                {t('about.rules.newTab')}
-              </span>
-            </div>
-          </article>
+                  <span className="rules-document-meta">{t(`about.rules.${document}Edition`)}</span>
+                </span>
+                <ArrowUpRight size={20} aria-hidden="true" />
+              </a>
+            ))}
+            <span id="rules-new-tab" className="sr-only">
+              {t('about.rules.newTab')}
+            </span>
+          </CompetitionPart>
         </div>
       </div>
     </section>

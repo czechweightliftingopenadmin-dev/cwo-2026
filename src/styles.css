@@ -658,6 +658,42 @@ main:focus {
   margin: 0;
   font: 450 clamp(26px, 2.2vw, 32px)/1.15 var(--font-display);
 }
+/* The title is the toggle; it looks like the heading it replaces. */
+.part-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+/* The title takes the column, so every arrow lines up at its right edge. */
+.part-toggle > span {
+  flex: 1;
+}
+.part-chevron {
+  flex: none;
+  margin-top: 0.15em;
+  color: var(--muted);
+  transform: rotate(180deg);
+  transition:
+    transform var(--duration) ease,
+    color var(--duration) ease;
+}
+.part-toggle:hover .part-chevron {
+  color: var(--ink);
+}
+.competition-format[data-open='false'] .part-chevron {
+  transform: none;
+}
+.competition-format > .competition-copy[hidden] {
+  display: none;
+}
 .competition-tags {
   display: flex;
   flex-wrap: wrap;

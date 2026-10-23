@@ -1,4 +1,4 @@
-import { registrationWindows, windowState } from './registration.js'
+import { applicationWindow, registrationWindows, windowState } from './registration.js'
 import type { TimeWindow, WindowState } from './registration.js'
 
 /**
@@ -14,8 +14,12 @@ import type { TimeWindow, WindowState } from './registration.js'
 
 /** Produkce: czechweightliftingopen.cz (větev main, databáze cwo-prod). */
 const production = {
-  /** Sekce Registrace v menu a na stránce. 'auto': od otevření registrace do konce změn. */
-  registrationSection: 'auto',
+  /**
+   * Sekce Registrace v menu a na stránce. 'on': informace jsou vidět hned, formuláře se ukážou
+   * podle termínů a tlačítko v úvodu od 1. 11. do konce posledního cenového pásma (13. 12.).
+   * 'auto': jen od otevření registrace do konce změn.
+   */
+  registrationSection: 'on',
   /** Registrační formulář. 'auto': 1. 11. – 15. 12. */
   registrationForm: 'auto',
   /** Změna registrace (hmotnostní kategorie a dvojboj). 'auto': 7. 12. – 15. 12. */
@@ -60,6 +64,15 @@ export const registrationFormState = (now = new Date(), config: Features = featu
 export const editFormState = (now = new Date(), config: Features = features) =>
   resolve(config.editForm, registrationWindows.edits, now)
 
+/** A form can be sent right now: registration, or changes to one. */
+export const isRegistrationOpen = (now = new Date(), config: Features = features) =>
+  registrationFormState(now, config) === 'open' || editFormState(now, config) === 'open'
+
+/** The hero's registration button: while registering is open, until applying ends. */
+export const showRegisterButton = (now = new Date(), config: Features = features) =>
+  registrationFormState(now, config) === 'open' &&
+  (config.registrationForm === 'on' || windowState(applicationWindow, now) === 'open')
+
 export function isVisible(
   section: 'registration' | 'startlist',
   now = new Date(),
@@ -72,7 +85,7 @@ export function isVisible(
         windowState(registrationWindows.startlist, now) !== 'upcoming')
     )
   if (config.registrationSection !== 'auto') return config.registrationSection === 'on'
-  return registrationFormState(now, config) === 'open' || editFormState(now, config) === 'open'
+  return isRegistrationOpen(now, config)
 }
 
 /** Content sections in page order; their labels are numbered by position. */

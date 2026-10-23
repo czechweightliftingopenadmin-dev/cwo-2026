@@ -2,7 +2,7 @@ import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react'
 import { ArrowDown, CalendarPlus } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { event } from '../config/event'
-import { isVisible } from '../config/features'
+import { isVisible, showRegisterButton } from '../config/features'
 import { calendarEvent, eventDays, googleCalendarUrl, icsFile } from '../lib/calendar'
 import type { CalendarEvent } from '../lib/calendar'
 import { locale } from '../lib/registration/format'
@@ -47,7 +47,7 @@ export function HeroActions() {
 
   return (
     <div className="hero-actions">
-      {isVisible('registration') && (
+      {isVisible('registration') && showRegisterButton() && (
         <a
           href="#registration"
           className="button"

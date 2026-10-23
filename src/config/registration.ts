@@ -36,6 +36,14 @@ export const priceTiers = [
   { from: '2026-12-07', to: '2026-12-13', individual: 1826, team: 5626 },
 ] as const
 
+/** Applying ends with the last price tier; the hero's registration button hides after it. */
+export const applicationWindow = {
+  opensAt: registrationWindows.registration.opensAt,
+  closesAt: new Date(
+    Date.parse(`${priceTiers.at(-1)!.to}T00:00:00+01:00`) + 24 * 60 * 60 * 1000,
+  ).toISOString(),
+} satisfies TimeWindow
+
 export const teamSize = { min: 3, max: 4 } as const
 /** One invoice covers 1–4 people: a team, or individuals from one club. */
 export const invoiceMaxAthletes = 4
