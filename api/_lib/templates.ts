@@ -184,6 +184,7 @@ function render({ language, subject, intro, highlight, sections, access }: Email
   const t = copy[language]
   const origin = siteOrigin()
   const background = escape(`${origin}/email/background.jpg`)
+  const masthead = escape(`${origin}/email/masthead.png`)
   const when = [
     event.dates && formatEventDates(event.dates, language),
     event.venue[language],
@@ -202,7 +203,9 @@ function render({ language, subject, intro, highlight, sections, access }: Email
     : ''
 
   // Tables and inline styles, because that is what e-mail clients render reliably.
-  // Clients without background images (Outlook on Windows) show the solid violet.
+  // The artwork covers the whole e-mail at any size, like the site's hero; clients without background images (Outlook on
+  // Windows) show the solid violet. Gmail drops web fonts, so the pixel-font masthead
+  // is an image (public/email/masthead.png, rendered from Bitcount at weight 450).
   const html = `<!doctype html>
 <html lang="${language}">
 <head>
@@ -226,15 +229,14 @@ function render({ language, subject, intro, highlight, sections, access }: Email
 <body style="margin:0;padding:0;background-color:${colors.page};-webkit-text-size-adjust:100%">
 <div style="display:none;max-height:0;overflow:hidden;mso-hide:all">${escape(preheader)}</div>
 <table ${table} bgcolor="${colors.page}" style="background-color:${colors.page}">
-<tr><td align="center">
+<tr><td class="art" align="center" background="${background}" bgcolor="${colors.page}" style="background-color:${colors.page};background-image:url('${background}');background-position:center 25%;background-size:cover;background-repeat:no-repeat">
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px">
-<tr><td class="frame" background="${background}" bgcolor="${colors.page}" style="padding:44px 16px 24px;background-color:${colors.page};background-image:url('${background}');background-position:center top;background-size:100% auto;background-repeat:no-repeat;font-family:${sans}">
+<tr><td class="frame" style="padding:44px 16px 24px;font-family:${sans}">
 
 <table ${table}>
 <tr><td class="masthead" style="padding:0 16px 132px;color:${colors.heroInk}">
-<p style="margin:0 0 18px;font:600 11px/1 ${sans};letter-spacing:0.12em;text-transform:uppercase;color:${colors.lime}">CWO ${event.year}</p>
-<p style="margin:0;font:500 30px/1.1 ${display};letter-spacing:-0.02em;color:${colors.heroInk}">${escape(event.name.toUpperCase())}</p>
-<p style="margin:14px 0 0;font:400 14px/1.5 ${sans};color:${colors.heroMuted}">${escape(when)}</p>
+<img src="${masthead}" width="463" alt="${escape(`CWO ${event.year} · ${event.name}`)}" style="display:block;width:100%;max-width:463px;height:auto;border:0;font:500 26px/1.2 ${sans};color:${colors.heroInk}" />
+<p style="margin:16px 0 0;font:400 14px/1.5 ${sans};color:${colors.heroMuted}">${escape(when)}</p>
 </td></tr>
 </table>
 
