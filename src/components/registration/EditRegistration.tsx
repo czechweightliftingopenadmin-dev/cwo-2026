@@ -12,7 +12,7 @@ import {
   weightClassesFor,
 } from '../../lib/registration/schema'
 import type { EditableRegistration, UpdatedRegistration } from '../../lib/registration/types'
-import { Field, focusFirstError, toErrors, useErrorText } from './fields'
+import { Field, focusFirstError, toErrors, useErrorText, useRevealOnChange } from './fields'
 import type { Errors } from './fields'
 import { Select } from './Select'
 
@@ -39,9 +39,7 @@ export function EditRegistration() {
   const groupTitle = (registration: EditableRegistration) =>
     registration.teamName ?? t(`registration.${registration.kind}`)
 
-  function focusHeading() {
-    requestAnimationFrame(() => headingRef.current?.focus())
-  }
+  useRevealOnChange(result ? 'result' : registrations ? 'edit' : 'find', headingRef)
 
   async function find(e: FormEvent) {
     e.preventDefault()
@@ -67,7 +65,6 @@ export function EditRegistration() {
         ]),
       ),
     )
-    focusHeading()
   }
 
   async function save(e: FormEvent) {
@@ -98,7 +95,6 @@ export function EditRegistration() {
       return setRequestError(response.error)
     }
     setResult(response.data)
-    focusHeading()
   }
 
   function reset() {
@@ -106,7 +102,6 @@ export function EditRegistration() {
     setResult(null)
     setIdentifier('')
     setEmail('')
-    focusHeading()
   }
 
   const notice = requestError && (
@@ -117,14 +112,15 @@ export function EditRegistration() {
 
   if (registrations && result) {
     return (
-      <div className="registration-panel" aria-live="polite">
+      <div key="result" className="registration-panel" aria-live="polite">
         <h3 ref={headingRef} tabIndex={-1} className="panel-title">
-          {result.changed === 0
-            ? t('edit.unchanged')
-            : result.emailSent
-              ? t('edit.saved')
-              : t('edit.savedNoEmail')}
+          {result.changed === 0 ? t('edit.unchanged') : t('edit.saved')}
         </h3>
+        {result.changed > 0 && (
+          <p className={result.emailSent ? undefined : 'notice notice-warning'}>
+            {result.emailSent ? t('edit.emailSent') : t('edit.emailFailed')}
+          </p>
+        )}
         <button type="button" className="button button-secondary" onClick={reset}>
           {t('edit.another')}
         </button>
@@ -137,7 +133,7 @@ export function EditRegistration() {
     let index = 0
     const single = registrations.length === 1
     return (
-      <form className="registration-panel" noValidate onSubmit={save}>
+      <form key="edit" className="registration-panel" noValidate onSubmit={save}>
         <h3 ref={headingRef} tabIndex={-1} className="panel-title">
           {single ? groupTitle(registrations[0]!) : t('edit.found')}
         </h3>
@@ -219,7 +215,7 @@ export function EditRegistration() {
   }
 
   return (
-    <form className="registration-panel" noValidate onSubmit={find}>
+    <form key="find" className="registration-panel" noValidate onSubmit={find}>
       <h3 ref={headingRef} tabIndex={-1} className="sr-only">
         {t('registration.tabEdit')}
       </h3>

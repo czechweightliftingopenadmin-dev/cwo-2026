@@ -157,6 +157,11 @@ export const en: TranslationShape<typeof cs> = {
     email: 'E-mail',
     phone: 'Phone',
     tshirtSize: 'T-shirt size (unisex)',
+    // Shorter labels for the review, where the value already carries the unit.
+    reviewWeightClass: 'Category',
+    reviewTotal: 'Total',
+    reviewTshirtSize: 'T-shirt',
+    reviewCompetitions: 'Competition',
     cwo: 'Czech Weightlifting Open',
     amcr: 'Czech Academic Championship',
     amcrMember: 'AM ČR as well',
@@ -225,9 +230,10 @@ export const en: TranslationShape<typeof cs> = {
     save: 'Save changes',
     saving: 'Saving…',
     cancel: 'Back',
-    saved:
-      'Your changes are saved. We have e-mailed a confirmation to everyone in the registration.',
-    savedNoEmail: 'Your changes are saved, but the e-mail could not be sent.',
+    saved: 'Your changes are saved',
+    emailSent: 'We have e-mailed a confirmation of the change.',
+    emailFailed:
+      'The confirmation e-mail could not be sent. If you need it, please contact the organisers.',
     unchanged: 'Nothing has changed.',
     another: 'Edit another registration',
   },

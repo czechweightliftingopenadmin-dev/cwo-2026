@@ -1034,6 +1034,14 @@ main:focus {
   display: grid;
   gap: 20px;
   container-type: inline-size;
+  /* Each step is a new panel; it fades in where the previous one stood. */
+  animation: panel-in var(--duration) ease-out;
+}
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
 }
 .registration-panel > .field-grid {
   max-width: 640px;
@@ -1419,7 +1427,7 @@ main:focus {
 }
 .review {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 16px;
   align-items: start;
 }
@@ -1436,9 +1444,25 @@ main:focus {
   margin: 0 0 10px;
   font: 450 18px/1.2 var(--font-display);
 }
-.review-athlete .review-list > div {
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
-  gap: 8px;
+.review-facts {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 16px;
+}
+.review-facts > [data-wide='true'] {
+  grid-column: 1 / -1;
+}
+.review-facts dt {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+.review-facts dd {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
 }
 .review-list {
   margin: 0;

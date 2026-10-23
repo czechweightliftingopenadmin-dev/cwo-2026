@@ -1,4 +1,6 @@
+import { event } from '../../src/config/event.js'
 import { registrationWindows, universities } from '../../src/config/registration.js'
+import { formatEventDates } from '../../src/lib/countdown.js'
 import type { Registration } from '../../src/lib/registration/schema.js'
 import type { EmailMessage } from './mailer.js'
 import type { StoredAthlete, StoredRegistration } from './store.js'
@@ -78,7 +80,18 @@ const copy = {
   },
 } as const
 
-const siteUrl = () => `${process.env.SITE_URL ?? 'https://czechweightliftingopen.cz'}/#registration`
+/**
+ * Links and the background image point at the deployment that sends the e-mail, so dev
+ * e-mails open the dev site. SITE_URL overrides both.
+ */
+function siteOrigin(): string {
+  if (process.env.SITE_URL) return process.env.SITE_URL.replace(/\/$/, '')
+  if (process.env.VERCEL_ENV === 'preview' && process.env.VERCEL_BRANCH_URL)
+    return `https://${process.env.VERCEL_BRANCH_URL}`
+  return 'https://czechweightliftingopen.cz'
+}
+
+const siteUrl = () => `${siteOrigin()}/#registration`
 
 function escape(value: string): string {
   return value.replace(
@@ -104,56 +117,169 @@ type Rows = [label: string, value: string][]
 interface Section {
   title?: string
   rows: Rows
+  /** Athlete sections take the site's female and male colours. */
+  sex?: 'M' | 'F'
 }
 
-function render(
-  language: Language,
-  subject: string,
-  intro: string,
-  sections: Section[],
-  footer: string[],
-) {
+interface Email {
+  language: Language
+  subject: string
+  intro: string
+  /** Shown large near the top, e.g. the registration code. */
+  highlight?: [label: string, value: string]
+  sections: Section[]
+  access: string[]
+}
+
+// The site's light theme on a card; around it, the hero's dark violet and artwork.
+const colors = {
+  page: '#120b20',
+  heroInk: '#fff9f1',
+  heroMuted: '#d5c5e2',
+  lime: '#b2dd80',
+  surface: '#f7f5ef',
+  surfaceAlt: '#e8e3ee',
+  ink: '#22202a',
+  muted: '#635c6a',
+  line: '#ddd5e3',
+  cyan: '#00677d',
+  F: { bg: '#f6e3ec', accent: '#a8366f' },
+  M: { bg: '#dcedf2', accent: '#00677d' },
+}
+// Bitcount loads in clients that allow web fonts (Apple Mail, iOS); others fall back.
+const sans = 'Inter,Arial,Helvetica,sans-serif'
+const display = "'Bitcount Single',Arial,Helvetica,sans-serif"
+const mono = "'Bitcount Single','Courier New',Courier,monospace"
+const table = 'role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"'
+
+function rowsHtml(rows: Rows) {
+  const cells = rows.map(([label, value], index) => {
+    const divider = index ? `border-top:1px solid ${colors.line};` : ''
+    return `<tr>
+<td class="label" width="42%" style="padding:8px 12px 8px 0;color:${colors.muted};vertical-align:top;${divider}">${escape(label)}</td>
+<td class="value" style="padding:8px 0;color:${colors.ink};font-weight:600;vertical-align:top;word-break:break-word;${divider}">${escape(value)}</td>
+</tr>`
+  })
+  return `<table ${table} style="border-collapse:collapse;font-size:14px;line-height:1.5">
+${cells.join('\n')}
+</table>`
+}
+
+const heading = (text: string, margin = '0 0 6px') =>
+  `<p style="margin:${margin};font:500 18px/1.3 ${display};color:${colors.ink}">${escape(text)}</p>`
+
+function sectionHtml(section: Section) {
+  const title = section.title ? heading(section.title) : ''
+  if (!section.sex)
+    return `<tr><td style="padding:0 0 20px">${title}${rowsHtml(section.rows)}</td></tr>`
+  const { bg, accent } = colors[section.sex]
+  return `<tr><td style="padding:0 0 16px">
+<table ${table} bgcolor="${bg}" style="background-color:${bg};border-top:4px solid ${accent}">
+<tr><td style="padding:16px 18px 10px">${title}${rowsHtml(section.rows)}</td></tr>
+</table>
+</td></tr>`
+}
+
+function render({ language, subject, intro, highlight, sections, access }: Email) {
   const t = copy[language]
-  const htmlSections = sections
-    .map(
-      (section) => `
-      ${section.title ? `<h2 style="font-size:16px;margin:28px 0 8px">${escape(section.title)}</h2>` : ''}
-      <table style="border-collapse:collapse;width:100%;font-size:14px">
-        ${section.rows
-          .map(
-            ([label, value]) => `<tr>
-          <td style="padding:6px 12px 6px 0;color:#635c6a;vertical-align:top;width:40%">${escape(label)}</td>
-          <td style="padding:6px 0;vertical-align:top"><strong>${escape(value)}</strong></td>
-        </tr>`,
-          )
-          .join('')}
-      </table>`,
-    )
-    .join('')
+  const origin = siteOrigin()
+  const background = escape(`${origin}/email/background.jpg`)
+  const when = [
+    event.dates && formatEventDates(event.dates, language),
+    event.venue[language],
+    event.city,
+  ]
+    .filter(Boolean)
+    .join(' · ')
+  const preheader = highlight ? `${highlight[0]}: ${highlight[1]}` : intro
+  const highlightHtml = highlight
+    ? `<table ${table} bgcolor="${colors.surfaceAlt}" style="background-color:${colors.surfaceAlt};border-left:4px solid ${colors.cyan};margin:0 0 28px">
+<tr><td style="padding:16px 20px">
+<p style="margin:0 0 4px;font:400 13px/1.4 ${sans};color:${colors.muted}">${escape(highlight[0])}</p>
+<p style="margin:0;font:600 32px/1.15 ${mono};letter-spacing:0.06em;color:${colors.cyan}">${escape(highlight[1])}</p>
+</td></tr>
+</table>`
+    : ''
+
+  // Tables and inline styles, because that is what e-mail clients render reliably.
+  // Clients without background images (Outlook on Windows) show the solid violet.
   const html = `<!doctype html>
 <html lang="${language}">
-  <body style="margin:0;padding:24px;background:#f7f5ef;color:#22202a;font-family:Arial,Helvetica,sans-serif;line-height:1.6">
-    <div style="max-width:600px;margin:0 auto;background:#ffffff;padding:28px;border:1px solid #bfb5ca">
-      <p style="margin:0 0 4px;color:#00677d;font-weight:bold;letter-spacing:0.08em">CWO 2026</p>
-      <h1 style="font-size:22px;margin:0 0 20px">${escape(subject)}</h1>
-      <p>${escape(t.greeting)},<br />${escape(intro)}</p>
-      ${htmlSections}
-      ${footer.map((line) => `<p style="margin-top:20px">${escape(line)}</p>`).join('')}
-      <p style="margin-top:20px"><a href="${escape(siteUrl())}" style="color:#00677d">${escape(t.linkLabel)}</a></p>
-      <p style="margin-top:28px">${escape(t.signature)}</p>
-    </div>
-  </body>
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="light" />
+<meta name="supported-color-schemes" content="light" />
+<title>${escape(subject)}</title>
+<link href="https://fonts.googleapis.com/css2?family=Bitcount+Single&amp;family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet" />
+<style>
+@media (max-width: 620px) {
+  .frame { padding: 28px 10px 16px !important; }
+  .masthead { padding: 0 10px 72px !important; }
+  .card { padding: 26px 20px !important; }
+  .label, .value { display: block !important; width: auto !important; }
+  .label { padding-bottom: 0 !important; }
+  .value { padding-top: 2px !important; border-top: 0 !important; }
+}
+</style>
+</head>
+<body style="margin:0;padding:0;background-color:${colors.page};-webkit-text-size-adjust:100%">
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all">${escape(preheader)}</div>
+<table ${table} bgcolor="${colors.page}" style="background-color:${colors.page}">
+<tr><td align="center">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px">
+<tr><td class="frame" background="${background}" bgcolor="${colors.page}" style="padding:44px 16px 24px;background-color:${colors.page};background-image:url('${background}');background-position:center top;background-size:100% auto;background-repeat:no-repeat;font-family:${sans}">
+
+<table ${table}>
+<tr><td class="masthead" style="padding:0 16px 132px;color:${colors.heroInk}">
+<p style="margin:0 0 18px;font:600 11px/1 ${sans};letter-spacing:0.12em;text-transform:uppercase;color:${colors.lime}">CWO ${event.year}</p>
+<p style="margin:0;font:500 30px/1.1 ${display};letter-spacing:-0.02em;color:${colors.heroInk}">${escape(event.name.toUpperCase())}</p>
+<p style="margin:14px 0 0;font:400 14px/1.5 ${sans};color:${colors.heroMuted}">${escape(when)}</p>
+</td></tr>
+</table>
+
+<table ${table} bgcolor="${colors.surface}" style="background-color:${colors.surface}">
+<tr><td class="card" style="padding:36px 32px 32px;color:${colors.ink};font:400 15px/1.6 ${sans}">
+<h1 style="margin:0 0 18px;font:500 26px/1.2 ${display};color:${colors.ink}">${escape(subject)}</h1>
+<p style="margin:0 0 24px">${escape(t.greeting)},<br />${escape(intro)}</p>
+${highlightHtml}
+<table ${table}>
+${sections.map(sectionHtml).join('\n')}
+</table>
+${heading(t.accessTitle, '12px 0 6px')}
+${access.map((line) => `<p style="margin:0 0 10px">${escape(line)}</p>`).join('\n')}
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:22px 0 28px">
+<tr><td bgcolor="${colors.cyan}" style="background-color:${colors.cyan};border-radius:3px">
+<a href="${escape(siteUrl())}" style="display:inline-block;padding:13px 22px;font:700 15px/1 ${sans};color:#ffffff;text-decoration:none">${escape(t.linkLabel)} &rarr;</a>
+</td></tr>
+</table>
+<p style="margin:0">${escape(t.signature)}</p>
+</td></tr>
+</table>
+
+<p style="margin:0;padding:22px 16px 0;font:400 12px/1.6 ${sans};color:${colors.heroMuted}">
+${escape(`${event.name} ${event.year} · ${event.venue[language]}, ${event.address}`)}<br />
+<a href="${escape(origin)}" style="color:${colors.heroMuted}">${escape(origin.replace(/^https?:\/\//, ''))}</a>
+</p>
+
+</td></tr>
+</table>
+</td></tr>
+</table>
+</body>
 </html>`
   const text = [
     `${t.greeting},`,
     intro,
+    ...(highlight ? ['', `${highlight[0]}: ${highlight[1]}`] : []),
     ...sections.flatMap((section) => [
       '',
       ...(section.title ? [section.title.toUpperCase()] : []),
       ...section.rows.map(([label, value]) => `${label}: ${value}`),
     ]),
     '',
-    ...footer,
+    t.accessTitle.toUpperCase(),
+    ...access,
     '',
     `${t.linkLabel}: ${siteUrl()}`,
     '',
@@ -184,7 +310,6 @@ export function registrationEmail(registration: Registration, accessCode: string
   const summary: Rows = [[t.kind, t[registration.kind]]]
   if (registration.teamName) summary.push([t.teamName, registration.teamName])
   if (registration.invoiceNumber) summary.push([t.invoiceNumber, registration.invoiceNumber])
-  summary.push([t.accessCode, accessCode])
 
   const athletes = registration.athletes.map((athlete): Section => {
     const competitions = [athlete.cwo && 'CWO', athlete.amcr && 'AM ČR'].filter(Boolean).join(' + ')
@@ -202,18 +327,19 @@ export function registrationEmail(registration: Registration, accessCode: string
       const university = universities.find((item) => item.code === athlete.university)
       rows.push([t.university, university?.name ?? athlete.university])
     }
-    return { title: `${athlete.firstName} ${athlete.lastName}`, rows }
+    return { title: `${athlete.firstName} ${athlete.lastName}`, rows, sex: athlete.sex }
   })
 
   return {
     to: recipients(registration.athletes),
-    ...render(
+    ...render({
       language,
-      t.registrationSubject,
-      t.registrationIntro,
-      [{ rows: summary }, ...athletes],
-      [...accessFooter(language, registration.invoiceNumber, accessCode)],
-    ),
+      subject: t.registrationSubject,
+      intro: t.registrationIntro,
+      highlight: [t.accessCode, accessCode],
+      sections: [{ rows: summary }, ...athletes],
+      access: accessFooter(language, registration.invoiceNumber, accessCode),
+    }),
   }
 }
 
@@ -235,7 +361,7 @@ export function updateEmail(
       rows.push([t.weightClass, `${kg(before.weightClass)} → ${kg(weightClass)}`])
     if (before.total !== total)
       rows.push([t.total, `${kg(String(before.total))} → ${kg(String(total))}`])
-    return { title: `${before.firstName} ${before.lastName}`, rows }
+    return { title: `${before.firstName} ${before.lastName}`, rows, sex: before.sex }
   })
   const summary: Rows = []
   if (registration.teamName) summary.push([t.teamName, registration.teamName])
@@ -244,13 +370,13 @@ export function updateEmail(
 
   return {
     to: recipients(registration.athletes),
-    ...render(
+    ...render({
       language,
-      t.updateSubject,
-      t.updateIntro,
-      [{ rows: summary }, ...sections],
-      [...accessFooter(language, registration.invoiceNumber, registration.accessCode)],
-    ),
+      subject: t.updateSubject,
+      intro: t.updateIntro,
+      sections: [{ rows: summary }, ...sections],
+      access: accessFooter(language, registration.invoiceNumber, registration.accessCode),
+    }),
   }
 }
 

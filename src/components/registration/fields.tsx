@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react'
+import { useLayoutEffect, useRef } from 'react'
+import type { ReactNode, RefObject } from 'react'
 import { useTranslation } from 'react-i18next'
 
 export type Errors = Partial<Record<string, string>>
@@ -27,6 +28,28 @@ export function focusFirstError(errors: Errors, fallback?: HTMLElement | null) {
     .filter((element) => element !== null)
     .sort((a, b) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1))
   ;(first ?? fallback)?.focus()
+}
+
+/**
+ * Call from a layout effect after swapping panels. A shorter panel would make the page
+ * collapse under a smooth scroll, so the top of the forms (tabs included) is brought back
+ * instantly, before paint, and only when it has scrolled out of view.
+ */
+export function revealPanel(heading: HTMLElement | null) {
+  if (!heading) return
+  const top = (heading.closest('.registration-forms') ?? heading).getBoundingClientRect().top
+  if (top < 0) window.scrollTo({ top: window.scrollY + top - 16, behavior: 'instant' })
+  heading.focus({ preventScroll: true })
+}
+
+/** Runs `revealPanel` whenever `view` changes, but not on the first render. */
+export function useRevealOnChange(view: string, heading: RefObject<HTMLElement | null>) {
+  const previous = useRef(view)
+  useLayoutEffect(() => {
+    if (previous.current === view) return
+    previous.current = view
+    revealPanel(heading.current)
+  }, [view, heading])
 }
 
 interface ControlProps {

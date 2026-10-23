@@ -18,6 +18,21 @@ async function open(page: Page, date: Date) {
 
 const section = (page: Page) => page.locator('#registration')
 
+/** A new step starts at the top of the forms, already in place rather than still scrolling. */
+async function expectStepInPlace(page: Page) {
+  const position = () =>
+    page.evaluate(() => ({
+      scrollY: window.scrollY,
+      top: document.querySelector('.registration-forms')!.getBoundingClientRect().top,
+    }))
+  const before = await position()
+  await page.waitForTimeout(400)
+  const after = await position()
+  expect(after.scrollY).toBe(before.scrollY)
+  expect(after.top).toBeGreaterThanOrEqual(-20)
+  expect(after.top).toBeLessThan(page.viewportSize()!.height / 2)
+}
+
 /** Picks an option in the custom select; the list renders at the end of the page. */
 async function choose(field: Locator, option: string) {
   await field.click()
@@ -93,11 +108,13 @@ test('an individual registers after fixing errors and reviewing the data', async
   await form.getByRole('button', { name: 'Pokračovat ke kontrole' }).click()
 
   await expect(form.getByRole('heading', { name: 'Zkontroluj údaje' })).toBeVisible()
+  await expectStepInPlace(page)
   await expect(form).toContainText('12345678')
   await expect(form).toContainText('jana@example.cz')
   await form.getByRole('button', { name: 'Odeslat registraci' }).click()
 
   await expect(form.getByRole('heading', { name: 'Registrace je hotová' })).toBeVisible()
+  await expectStepInPlace(page)
   await expect(form).toContainText('CW-ABCD-EFGH')
   expect(sent).toMatchObject({ kind: 'individual', invoiceNumber: '12345678', website: '' })
 

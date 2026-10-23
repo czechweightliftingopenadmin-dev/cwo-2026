@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { CSSProperties, FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { teamSize, universities } from '../../config/registration'
@@ -27,6 +27,7 @@ import {
   focusFirstError,
   toErrors,
   useErrorText,
+  useRevealOnChange,
 } from './fields'
 import type { Errors } from './fields'
 
@@ -50,18 +51,19 @@ export function RegistrationForm() {
     if (phase !== 'done') saveDraft(draft)
   }, [draft, phase])
 
-  function showPhase(next: Phase) {
-    setPhase(next)
-    requestAnimationFrame(() => {
-      headingRef.current?.focus({ preventScroll: true })
-      headingRef.current?.scrollIntoView({ block: 'start' })
-    })
-  }
+  // Errors are focused after the panel is revealed, so the invalid field keeps the focus.
+  const errorsToFocus = useRef<Errors | null>(null)
+  useRevealOnChange(phase, headingRef)
+  useLayoutEffect(() => {
+    if (!errorsToFocus.current) return
+    focusFirstError(errorsToFocus.current, summaryRef.current)
+    errorsToFocus.current = null
+  })
 
   function showErrors(next: Errors) {
+    errorsToFocus.current = next
     setErrors(next)
     setPhase('form')
-    requestAnimationFrame(() => focusFirstError(next, summaryRef.current))
   }
 
   function clearErrors(...paths: string[]) {
@@ -94,7 +96,7 @@ export function RegistrationForm() {
     if (!parsed.success) return showErrors(toErrors(toFieldIssues(parsed.error)))
     setErrors({})
     setSubmitError(null)
-    showPhase('review')
+    setPhase('review')
   }
 
   async function submit() {
@@ -108,7 +110,7 @@ export function RegistrationForm() {
     if (response.ok) {
       saveDraft(null)
       setResult(response.data)
-      showPhase('done')
+      setPhase('done')
     } else if (response.error === 'invoiceFull' || response.error === 'alreadyRegistered') {
       showErrors({ invoiceNumber: response.error })
     } else if (response.error === 'validation' && response.issues?.length) {
@@ -121,12 +123,12 @@ export function RegistrationForm() {
   function startOver() {
     setDraft(emptyDraft())
     setResult(null)
-    showPhase('form')
+    setPhase('form')
   }
 
   if (phase === 'done' && result) {
     return (
-      <div className="registration-panel" aria-live="polite">
+      <div key="done" className="registration-panel" aria-live="polite">
         <h3 ref={headingRef} tabIndex={-1} className="panel-title">
           {t('registration.doneTitle')}
         </h3>
@@ -149,7 +151,7 @@ export function RegistrationForm() {
 
   if (phase === 'review') {
     return (
-      <div className="registration-panel">
+      <div key="review" className="registration-panel">
         <h3 ref={headingRef} tabIndex={-1} className="panel-title">
           {t('registration.reviewTitle')}
         </h3>
@@ -165,7 +167,7 @@ export function RegistrationForm() {
             type="button"
             className="button button-secondary"
             disabled={submitting}
-            onClick={() => showPhase('form')}
+            onClick={() => setPhase('form')}
           >
             {t('registration.back')}
           </button>
@@ -179,7 +181,7 @@ export function RegistrationForm() {
 
   const [first] = draft.athletes
   return (
-    <form className="registration-panel" noValidate onSubmit={review}>
+    <form key="form" className="registration-panel" noValidate onSubmit={review}>
       <h3 ref={headingRef} tabIndex={-1} className="sr-only">
         {t('registration.tabRegister')}
       </h3>
@@ -363,7 +365,8 @@ function Review({ draft }: { draft: Draft }) {
       </dl>
       {draft.athletes.map((athlete, index) => {
         const university = universities.find((item) => item.code === athlete.university)
-        const rows: [string, string][] = [
+        // Short facts share a row; contacts and the university take the full width.
+        const facts: [label: string, value: string, wide?: boolean][] = [
           [
             t('registration.birthDate'),
             formatBirthDate(normaliseBirthDate(athlete.birthDate), i18n.language),
@@ -372,17 +375,20 @@ function Review({ draft }: { draft: Draft }) {
             t('registration.sex'),
             t(athlete.sex === 'F' ? 'registration.female' : 'registration.male'),
           ],
-          [t('registration.weightClass'), kg(athlete.weightClass)],
-          [t('registration.total'), kg(athlete.total)],
-          [t('registration.email'), athlete.email.trim().toLowerCase()],
-          [t('registration.phone'), athlete.phone.trim()],
+          [t('registration.reviewWeightClass'), kg(athlete.weightClass)],
+          [t('registration.reviewTotal'), kg(athlete.total)],
           [
-            t('registration.competitionsLabel'),
+            t('registration.reviewCompetitions'),
             [athlete.cwo && 'CWO', athlete.amcr && 'AM ČR'].filter(Boolean).join(' + '),
           ],
         ]
-        if (athlete.cwo) rows.push([t('registration.tshirtSize'), athlete.tshirtSize])
-        if (athlete.amcr && university) rows.push([t('registration.university'), university.name])
+        if (athlete.cwo) facts.push([t('registration.reviewTshirtSize'), athlete.tshirtSize])
+        facts.push(
+          [t('registration.email'), athlete.email.trim().toLowerCase(), true],
+          [t('registration.phone'), athlete.phone.trim(), true],
+        )
+        if (athlete.amcr && university)
+          facts.push([t('registration.university'), university.name, true])
         return (
           <section
             key={index}
@@ -393,9 +399,9 @@ function Review({ draft }: { draft: Draft }) {
             <h4>
               {athlete.firstName.trim()} {athlete.lastName.trim()}
             </h4>
-            <dl className="review-list">
-              {rows.map(([label, value]) => (
-                <div key={label}>
+            <dl className="review-facts">
+              {facts.map(([label, value, wide]) => (
+                <div key={label} data-wide={wide}>
                   <dt>{label}</dt>
                   <dd>{value}</dd>
                 </div>
