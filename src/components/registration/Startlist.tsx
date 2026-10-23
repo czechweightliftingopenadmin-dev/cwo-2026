@@ -6,7 +6,9 @@ import { fetchStartlist } from '../../lib/registration/api'
 import { formatDateTime, kg } from '../../lib/registration/format'
 import type { Startlist as StartlistData, StartlistEntry } from '../../lib/registration/types'
 
-type Filter = 'women' | 'men' | 'teams' | 'amcr'
+// The structure of earlier start lists: women and men by category, CWO and AM ČR together
+// and team members included, then CWO Teams.
+type Filter = 'women' | 'men' | 'teams'
 type Status = 'loading' | 'error' | 'ready'
 
 const categoryOrder = (entry: StartlistEntry) => {
@@ -16,7 +18,9 @@ const categoryOrder = (entry: StartlistEntry) => {
 }
 
 const byCategoryThenTotal = (a: StartlistEntry, b: StartlistEntry) =>
-  a.sex.localeCompare(b.sex) || categoryOrder(a) - categoryOrder(b) || b.total - a.total
+  categoryOrder(a) - categoryOrder(b) ||
+  b.total - a.total ||
+  a.lastName.localeCompare(b.lastName, 'cs')
 
 interface Group {
   title: string
@@ -53,34 +57,28 @@ export function Startlist() {
     void load()
   }, [load])
 
-  const sexLabel = (entry: StartlistEntry) =>
-    t(entry.sex === 'F' ? 'startlist.women' : 'startlist.men')
   const entries = data?.entries ?? []
-  const groups: Group[] =
-    filter === 'teams'
-      ? groupBy(
-          entries
-            .filter((entry) => entry.kind === 'team')
-            .sort((a, b) => (a.teamName ?? '').localeCompare(b.teamName ?? '', 'cs')),
-          (entry) => entry.teamName ?? '',
-        )
-      : groupBy(
-          entries
-            .filter((entry) =>
-              filter === 'amcr'
-                ? entry.amcr
-                : entry.kind === 'individual' &&
-                  entry.cwo &&
-                  entry.sex === (filter === 'women' ? 'F' : 'M'),
-            )
-            .sort(byCategoryThenTotal),
-          (entry) =>
-            filter === 'amcr'
-              ? `${sexLabel(entry)} ${kg(entry.weightClass)}`
-              : kg(entry.weightClass),
-        )
-  const showCategory = filter === 'teams'
-  const showUniversity = filter === 'amcr'
+  const isTeams = filter === 'teams'
+  const groups: Group[] = isTeams
+    ? groupBy(
+        entries
+          .filter((entry) => entry.kind === 'team')
+          .sort((a, b) => (a.teamName ?? '').localeCompare(b.teamName ?? '', 'cs')),
+        (entry) => entry.teamName ?? '',
+      )
+    : groupBy(
+        entries
+          .filter((entry) => entry.sex === (filter === 'women' ? 'F' : 'M'))
+          .sort(byCategoryThenTotal),
+        (entry) => `${t(`startlist.${filter}`)} ${kg(entry.weightClass)}`,
+      )
+
+  const mark = (value: boolean) => (
+    <>
+      <span aria-hidden="true">{value ? '✓' : '—'}</span>
+      <span className="sr-only">{t(value ? 'startlist.yes' : 'startlist.no')}</span>
+    </>
+  )
 
   return (
     <section
@@ -120,7 +118,7 @@ export function Startlist() {
               {data?.isFinal && <span className="badge">{t('startlist.final')}</span>}
             </div>
             <div className="tabs" role="group" aria-label={t('startlist.filterLabel')}>
-              {(['women', 'men', 'teams', 'amcr'] as const).map((value) => (
+              {(['women', 'men', 'teams'] as const).map((value) => (
                 <button
                   key={value}
                   type="button"
@@ -147,28 +145,41 @@ export function Startlist() {
                       <thead>
                         <tr>
                           <th scope="col">{t('startlist.name')}</th>
-                          <th scope="col">{t('startlist.birthYear')}</th>
-                          {showCategory && <th scope="col">{t('startlist.weightClass')}</th>}
-                          {showUniversity && <th scope="col">{t('startlist.university')}</th>}
+                          {isTeams && <th scope="col">{t('startlist.weightClass')}</th>}
                           <th scope="col" className="numeric">
                             {t('startlist.total')}
                           </th>
+                          {!isTeams && (
+                            <>
+                              <th scope="col">{t('startlist.university')}</th>
+                              <th scope="col" className="mark">
+                                {t('startlist.amcr')}
+                              </th>
+                              <th scope="col" className="mark">
+                                {t('startlist.cwo')}
+                              </th>
+                            </>
+                          )}
                         </tr>
                       </thead>
                       <tbody>
                         {group.entries.map((entry, index) => (
                           <tr key={index}>
                             <th scope="row">
-                              {entry.lastName} {entry.firstName}
+                              {entry.firstName} {entry.lastName}
+                              {!isTeams && entry.teamName && (
+                                <span className="startlist-team">{entry.teamName}</span>
+                              )}
                             </th>
-                            <td>{entry.birthYear}</td>
-                            {showCategory && (
-                              <td>
-                                {sexLabel(entry)} {kg(entry.weightClass)}
-                              </td>
-                            )}
-                            {showUniversity && <td>{entry.university}</td>}
+                            {isTeams && <td>{kg(entry.weightClass)}</td>}
                             <td className="numeric">{kg(entry.total)}</td>
+                            {!isTeams && (
+                              <>
+                                <td>{entry.university ?? '—'}</td>
+                                <td className="mark">{mark(entry.amcr)}</td>
+                                <td className="mark">{mark(entry.cwo)}</td>
+                              </>
+                            )}
                           </tr>
                         ))}
                       </tbody>

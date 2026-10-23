@@ -1525,6 +1525,20 @@ main:focus {
 .startlist-group h3 .muted-copy {
   font-family: var(--font-sans);
 }
+/* Team members also lift in their category; the team shows under the name. */
+.startlist-team {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 400;
+}
+.data-table .numeric:not(:last-child) {
+  padding-right: 28px;
+}
+.data-table .mark {
+  width: 4.5em;
+  text-align: center;
+}
 @container (max-width: 900px) {
   .athlete-list[data-layout='team'] {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1780,7 +1794,8 @@ main:focus {
     flex-wrap: nowrap;
   }
   .tabs button {
-    flex: 1 1 0;
+    /* Widths follow the labels, so longer ones ("CWO Teams") stay on one line. */
+    flex: 1 1 auto;
     padding-inline: 6px;
   }
   .rules-document {
