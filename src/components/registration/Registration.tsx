@@ -1,9 +1,16 @@
-import { ArrowUpRight } from 'lucide-react'
+import { ArrowDown, ArrowUpRight } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { editFormState, registrationFormState, sectionNumber } from '../../config/features'
+import {
+  editFormState,
+  canChangeRegistration,
+  registrationFormState,
+  sectionNumber,
+  showRegisterButton,
+} from '../../config/features'
 import { applicationFormUrl, priceTiers, registrationWindows } from '../../config/registration'
 import { formatDay, formatPrice } from '../../lib/registration/format'
+import { goToSection } from '../../lib/scroll'
 import { EditRegistration } from './EditRegistration'
 import { RegistrationForm } from './RegistrationForm'
 
@@ -16,7 +23,7 @@ export function Registration() {
   const edits = editFormState()
   // Only open forms get a tab; the switcher appears when both are open.
   const tabs = (['register', 'edit'] as const).filter((value) =>
-    value === 'register' ? registration === 'open' : edits === 'open',
+    value === 'register' ? registration === 'open' : canChangeRegistration(),
   )
   const [selected, setSelected] = useState<Tab>('register')
   const tab = tabs.includes(selected) ? selected : tabs[0]
@@ -40,26 +47,42 @@ export function Registration() {
           <h3>{t('registration.howTitle')}</h3>
           <div className="competition-copy">
             <ol className="registration-steps">
-              <li>{t('registration.stepApply')}</li>
-              <li>{t('registration.stepRegister')}</li>
               <li>
-                {t('registration.stepConfirm', {
-                  from: day(registrationWindows.edits.opensAt),
-                  to: day(registrationWindows.edits.closesAt, true),
-                })}
+                <strong>{t('registration.stepApplyTitle')}</strong>
+                <p>{t('registration.stepApply')}</p>
+                {showRegisterButton() && (
+                  <a
+                    className="button apply-link"
+                    href={applicationFormUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {t('registration.applyLink')}
+                    <ArrowUpRight size={18} aria-hidden="true" />
+                  </a>
+                )}
+              </li>
+              <li>
+                <strong>{t('registration.stepRegisterTitle')}</strong>
+                <p>{t('registration.stepRegister')}</p>
+                {registration === 'open' && (
+                  <a
+                    className="button button-secondary apply-link"
+                    href="#registration-details"
+                    onClick={(e) => {
+                      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
+                      e.preventDefault()
+                      setSelected('register')
+                      goToSection('registration-details')
+                    }}
+                  >
+                    {t('registration.detailsLink')}
+                    <ArrowDown size={18} aria-hidden="true" />
+                  </a>
+                )}
               </li>
             </ol>
-            {applicationFormUrl && (
-              <a
-                className="button apply-link"
-                href={applicationFormUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {t('registration.applyLink')}
-                <ArrowUpRight size={18} aria-hidden="true" />
-              </a>
-            )}
+            <p className="registration-amcr-note">{t('registration.amcrNote')}</p>
             <h4>{t('registration.pricesTitle')}</h4>
             <div className="table-scroll">
               <table className="data-table">
@@ -85,7 +108,16 @@ export function Registration() {
             </div>
           </div>
         </div>
-        <div className="registration-forms">
+        <div
+          id="registration-details"
+          tabIndex={-1}
+          className="registration-forms"
+          aria-labelledby="registration-details-title"
+        >
+          <h3 id="registration-details-title">{t('registration.detailsTitle')}</h3>
+          {tab === 'register' && (
+            <p className="registration-details-intro">{t('registration.detailsIntro')}</p>
+          )}
           {tabs.length > 1 && (
             <div className="tabs" role="group" aria-label={t('registration.tabsLabel')}>
               {tabs.map((value) => (
@@ -107,7 +139,22 @@ export function Registration() {
                   date: day(registrationWindows.registration.closesAt, true),
                 })}
               </p>
-              <RegistrationForm />
+              <RegistrationForm
+                onEdit={
+                  canChangeRegistration()
+                    ? () => {
+                        setSelected('edit')
+                        goToSection('registration-details')
+                      }
+                    : undefined
+                }
+              />
+              <p className="registration-confirmation">
+                {t('registration.stepConfirm', {
+                  from: day(registrationWindows.edits.opensAt),
+                  to: day(registrationWindows.edits.closesAt, true),
+                })}
+              </p>
             </>
           ) : tab === 'edit' ? (
             <EditRegistration />

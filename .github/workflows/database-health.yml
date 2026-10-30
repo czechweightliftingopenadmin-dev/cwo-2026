@@ -1,0 +1,55 @@
+# Real read-only database traffic for both Free projects. No fake registrations,
+# e-mails, audit entries or start-list records. Uses the existing backup secrets.
+# A schedule runs from the default branch (main), once this workflow is merged.
+name: Check database availability
+on:
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: database-health
+  cancel-in-progress: false
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: prod
+            secret: SUPABASE_DB_URL
+          - target: dev
+            secret: SUPABASE_DB_URL_DEV
+    name: Check cwo-${{ matrix.target }}
+    steps:
+      - name: Install PostgreSQL client
+        run: sudo apt-get install -y -qq postgresql-client > /dev/null
+
+      - name: Read from the database without changing data
+        env:
+          DB_URL: ${{ secrets[matrix.secret] }}
+          PGCONNECT_TIMEOUT: '20'
+          PGSSLMODE: require
+          PGOPTIONS: '-c default_transaction_read_only=on -c statement_timeout=10000'
+        shell: bash
+        run: |
+          if [ -z "$DB_URL" ]; then
+            echo "::error::Database connection secret is missing."
+            exit 1
+          fi
+          for attempt in 1 2 3; do
+            # Discard the result and connection errors: this is a public repository.
+            # EXISTS reads at most one row, even when registrations grow.
+            if psql --no-psqlrc --set=ON_ERROR_STOP=1 --dbname="$DB_URL" \
+              --command='SELECT EXISTS (SELECT 1 FROM public.registrations LIMIT 1);' \
+              > /dev/null 2>&1; then
+              echo "Database is available (read-only check)."
+              exit 0
+            fi
+            if [ "$attempt" -lt 3 ]; then sleep 10; fi
+          done
+          echo "::error::Database check failed. Check project availability and the connection secret."
+          exit 1

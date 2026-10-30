@@ -62,6 +62,8 @@ test('the hero links to registration and adds the event to a calendar', async ({
   await page.goto('/')
   const hero = page.locator('#home')
   if (isVisible('registration', duringRegistration) && showRegisterButton(duringRegistration)) {
+    await expect(hero.locator('a[href="#registration"]')).toHaveCount(1)
+    await expect(hero.locator('a[href*="forms.gle"]')).toHaveCount(0)
     await hero.getByRole('link', { name: 'Registrace' }).click()
     await expect(page.locator('#registration')).toBeFocused()
     await expect(page).toHaveURL(/#registration$/)
@@ -78,6 +80,41 @@ test('the hero links to registration and adds the event to a calendar', async ({
   const href = decodeURIComponent((await whole.getAttribute('href')) ?? '')
   expect(href).toContain('DTSTART;VALUE=DATE:20261221')
   expect(href).toContain('DTEND;VALUE=DATE:20261223')
+})
+
+test('the application and payment lead back to athlete details, including from the edit tab', async ({
+  page,
+}) => {
+  test.skip(!formOpen, 'Registration form is switched off')
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await open(page, duringEdits)
+  const registration = section(page)
+  const steps = registration.locator('.registration-steps > li')
+  await expect(steps).toHaveCount(2)
+  await expect(steps.nth(0)).toContainText('Číslo faktury si uschovej')
+  await expect(steps.nth(1)).toContainText('Po zaplacení se vrať sem')
+  await expect(registration.getByRole('link', { name: 'Přihláška a platba' })).toHaveAttribute(
+    'href',
+    'https://forms.gle/sq6Bbdaxo1xmtaJN7',
+  )
+  await expect(registration.locator('.registration-amcr-note')).toContainText('pouze na AM ČR')
+  await expect(registration.locator('.registration-amcr-note')).toContainText(
+    'Google přihláška ani faktura nejsou potřeba',
+  )
+  if (editFormState(duringEdits) === 'open') {
+    await registration.getByRole('button', { name: 'Změna registrace', exact: true }).click()
+  }
+  await registration.getByRole('link', { name: 'Už mám zaplaceno — doplnit údaje' }).click()
+  await expect(page).toHaveURL(/#registration-details$/)
+  await expect(page.locator('#registration-details')).toBeFocused()
+  await expect(registration.getByLabel('Číslo faktury')).toBeVisible()
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  const leftEdges = await registration.evaluate((element) =>
+    ['.registration-steps', '.registration-amcr-note', '.data-table'].map(
+      (selector) => element.querySelector(selector)!.getBoundingClientRect().left,
+    ),
+  )
+  expect(Math.max(...leftEdges) - Math.min(...leftEdges)).toBeLessThan(1)
 })
 
 test('an individual registers after fixing errors and reviewing the data', async ({ page }) => {
@@ -199,10 +236,12 @@ test('results change from 7 December with the invoice and e-mail', async ({ page
   let update: Record<string, unknown> | undefined
   await page.route('**/api/lookup', (route) =>
     json(route, 200, {
+      permissions: { results: true, competitions: true },
       registrations: [
         {
           kind: 'individual',
           teamName: null,
+          invoiceNumber: '12345678',
           athletes: [
             {
               id: athleteId,
@@ -211,6 +250,10 @@ test('results change from 7 December with the invoice and e-mail', async ({ page
               sex: 'F',
               weightClass: '61',
               total: 150,
+              cwo: true,
+              amcr: false,
+              university: null,
+              tshirtSize: 'M',
             },
           ],
         },

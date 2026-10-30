@@ -30,6 +30,10 @@ const stored: StoredRegistration = {
       weightClass: '61',
       total: 150,
       email: 'jana@example.cz',
+      cwo: true,
+      amcr: false,
+      university: null,
+      tshirtSize: 'M',
     },
   ],
 }
@@ -38,7 +42,42 @@ function setup(now: Date, overrides: Partial<Store> = {}, mailer?: Mailer) {
   const store: Store = {
     createRegistration: vi.fn(async () => ({ id: 'reg-1' })),
     findRegistrations: vi.fn(async () => [stored]),
-    updateResults: vi.fn(async (_id, changes) => changes.length),
+    applyChanges: vi.fn<Store['applyChanges']>(async (identifier, email, changes) => {
+      // Handler tests simulate the transaction result; real constraints and atomicity
+      // are exercised against the actual migrations in supabase/migration.test.ts.
+      const registrations = await store.findRegistrations(identifier, email)
+      const groups = registrations
+        .map((registration) => {
+          const changedAthletes = registration.athletes.flatMap((before) => {
+            const change = changes.find((item) => item.athleteId === before.id)
+            if (!change) return []
+            const after = {
+              ...before,
+              ...(change.weightClass !== undefined
+                ? { weightClass: change.weightClass, total: change.total! }
+                : {}),
+              ...(change.addCwo ? { cwo: true, tshirtSize: change.addCwo.tshirtSize } : {}),
+              ...(change.addAmcr ? { amcr: true, university: change.addAmcr.university } : {}),
+              ...(change.tshirtSize ? { tshirtSize: change.tshirtSize } : {}),
+              ...(change.university ? { university: change.university } : {}),
+            }
+            return JSON.stringify(before) === JSON.stringify(after) ? [] : [{ before, after }]
+          })
+          const invoice = changes.find(
+            (item) =>
+              registration.athletes.some((athlete) => athlete.id === item.athleteId) && item.addCwo,
+          )?.addCwo?.invoiceNumber
+          return {
+            registration: { ...registration, invoiceNumber: invoice ?? registration.invoiceNumber },
+            changes: changedAthletes,
+          }
+        })
+        .filter((group) => group.changes.length > 0)
+      return {
+        changed: groups.reduce((count, group) => count + group.changes.length, 0),
+        registrations: groups,
+      }
+    }),
     recordLookupAttempt: vi.fn(async () => 1),
     logEmail: vi.fn(async () => {}),
     latestStartlist: vi.fn(async () => ({ publishedAt: null, isFinal: false, entries: [] })),
@@ -208,10 +247,12 @@ describe('lookupRegistration', () => {
     ).toBe(404)
   })
 
-  it('is closed before 7 December and rate limited', async () => {
-    expect((await lookupRegistration(post(lookup), setup(duringRegistration).deps)).status).toBe(
-      403,
-    )
+  it('allows additions before 7 December but keeps results locked, and rate limits lookups', async () => {
+    const early = await lookupRegistration(post(lookup), setup(duringRegistration).deps)
+    expect(early.status).toBe(200)
+    expect(await early.json()).toMatchObject({
+      permissions: { results: false, competitions: true },
+    })
     const { deps } = setup(duringEdits, { recordLookupAttempt: vi.fn(async () => lookupLimit + 1) })
     expect((await lookupRegistration(post(lookup), deps)).status).toBe(429)
   })
@@ -231,9 +272,12 @@ describe('updateRegistration', () => {
     const response = await updateRegistration(post(update('69', 155)), deps)
     expect(response.status).toBe(200)
     expect(await response.json()).toEqual({ changed: 1, emailSent: true })
-    expect(store.updateResults).toHaveBeenCalledWith('reg-1', [
-      { id: athleteId, weightClass: '69', total: 155 },
-    ])
+    expect(store.applyChanges).toHaveBeenCalledWith(
+      { invoiceNumber: '12345678' },
+      'jana@example.cz',
+      [{ athleteId, weightClass: '69', total: 155 }],
+      { results: true, competitions: true },
+    )
     const message = send.mock.calls[0]![0]
     expect(message.subject).toBe('CWO 2026 registration change')
     expect(message.text).toContain('61 kg → 69 kg')
@@ -244,7 +288,7 @@ describe('updateRegistration', () => {
     const { deps, store, send } = setup(duringEdits)
     const response = await updateRegistration(post(update('61', 150)), deps)
     expect(await response.json()).toEqual({ changed: 0, emailSent: false })
-    expect(store.updateResults).not.toHaveBeenCalled()
+    expect(store.applyChanges).toHaveBeenCalledOnce()
     expect(send).not.toHaveBeenCalled()
   })
 
@@ -252,7 +296,7 @@ describe('updateRegistration', () => {
     const { deps, store } = setup(duringEdits)
     const response = await updateRegistration(post(update('75', 150)), deps)
     expect(response.status).toBe(400)
-    expect(store.updateResults).not.toHaveBeenCalled()
+    expect(store.applyChanges).not.toHaveBeenCalled()
   })
 
   it('updates and e-mails each registration on a shared invoice separately', async () => {
@@ -283,18 +327,89 @@ describe('updateRegistration', () => {
       deps,
     )
     expect(await response.json()).toEqual({ changed: 2, emailSent: true })
-    expect(store.updateResults).toHaveBeenCalledWith('reg-1', [
-      { id: athleteId, weightClass: '69', total: 155 },
-    ])
-    expect(store.updateResults).toHaveBeenCalledWith('reg-2', [
-      { id: other.athletes[0]!.id, weightClass: '57', total: 150 },
-    ])
+    expect(store.applyChanges).toHaveBeenCalledOnce()
     expect(send).toHaveBeenCalledTimes(2)
   })
 
   it('is closed after 15 December', async () => {
     const { deps } = setup(new Date('2026-12-16T00:00:01+01:00'))
     expect((await updateRegistration(post(update('69', 155)), deps)).status).toBe(403)
+  })
+
+  it('adds AM CR by invoice and by code before results editing opens', async () => {
+    for (const identifier of ['12345678', 'CW-ABCD-EFGH']) {
+      const { deps, store, send } = setup(duringRegistration)
+      const response = await updateRegistration(
+        post({
+          identifier,
+          email: 'jana@example.cz',
+          language: 'cs',
+          changes: [{ athleteId, addAmcr: { university: 'MU' } }],
+        }),
+        deps,
+      )
+      expect(response.status).toBe(200)
+      expect(store.applyChanges).toHaveBeenCalledWith(
+        expect.any(Object),
+        'jana@example.cz',
+        expect.any(Array),
+        { results: false, competitions: true },
+      )
+      expect(send.mock.calls[0]![0].text).toContain('CWO → CWO + AM ČR')
+      expect(send.mock.calls[0]![0].text).toContain('Masarykova univerzita')
+    }
+  })
+
+  it('blocks early result changes and invalid schools before calling the database', async () => {
+    const { deps, store } = setup(duringRegistration)
+    expect((await updateRegistration(post(update('69', 155)), deps)).status).toBe(403)
+    const invalid = await updateRegistration(
+      post({ ...update('61', 150), changes: [{ athleteId, addAmcr: { university: 'unknown' } }] }),
+      deps,
+    )
+    expect(invalid.status).toBe(400)
+    expect(await invalid.json()).toMatchObject({
+      issues: [{ path: 'changes.0.addAmcr.university', message: 'required' }],
+    })
+    expect(store.applyChanges).not.toHaveBeenCalled()
+  })
+
+  it('returns invoice errors on the matching field and keeps ownership failures generic', async () => {
+    const { deps } = setup(duringRegistration, {
+      applyChanges: vi.fn(async () => ({ error: 'invoiceFull' as const })),
+    })
+    const response = await updateRegistration(
+      post({
+        identifier: 'AM-ABCD-EFGH',
+        email: 'jana@example.cz',
+        changes: [{ athleteId, addCwo: { invoiceNumber: '12345678', tshirtSize: 'M' } }],
+      }),
+      deps,
+    )
+    expect(response.status).toBe(409)
+    expect(await response.json()).toMatchObject({
+      error: 'invoiceFull',
+      issues: [{ path: 'changes.0.addCwo.invoiceNumber', message: 'invoiceFull' }],
+    })
+    const unauthorised = setup(duringRegistration, { findRegistrations: vi.fn(async () => []) })
+    expect((await updateRegistration(post(update('61', 150)), unauthorised.deps)).status).toBe(404)
+    expect(unauthorised.store.applyChanges).not.toHaveBeenCalled()
+  })
+
+  it('does not report a saved change as a failed save when its email fails', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    const { deps } = setup(
+      duringEdits,
+      {},
+      {
+        send: vi.fn(async () => {
+          throw new Error('mail down')
+        }),
+      },
+    )
+    const response = await updateRegistration(post(update('69', 155)), deps)
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({ changed: 1, emailSent: false })
   })
 })
 

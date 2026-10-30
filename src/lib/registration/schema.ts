@@ -153,13 +153,59 @@ export const lookupSchema = z.object({
 
 export const updateSchema = lookupSchema.extend({
   changes: z
-    .array(z.object({ athleteId: z.uuid(), weightClass: z.string(), total: totalSchema }))
+    .array(
+      z
+        .object({
+          athleteId: z.uuid(),
+          weightClass: z.string().optional(),
+          total: totalSchema.optional(),
+          tshirtSize: z.enum(tshirtSizes, 'required').optional(),
+          university: z
+            .string()
+            .refine((value) => universityCodes.includes(value), 'required')
+            .optional(),
+          // Additions are explicit actions: existing participation cannot be removed here.
+          addCwo: z
+            .object({
+              invoiceNumber: z.string().trim().regex(invoicePattern, 'invoiceFormat'),
+              tshirtSize: z.enum(tshirtSizes, 'required'),
+            })
+            .optional(),
+          addAmcr: z
+            .object({
+              university: z.string().refine((value) => universityCodes.includes(value), 'required'),
+            })
+            .optional(),
+        })
+        .strict()
+        .superRefine((change, ctx) => {
+          if ((change.weightClass === undefined) !== (change.total === undefined))
+            ctx.addIssue({
+              code: 'custom',
+              path: [change.weightClass === undefined ? 'weightClass' : 'total'],
+              message: 'required',
+            })
+          if (change.addCwo && change.tshirtSize !== undefined)
+            ctx.addIssue({ code: 'custom', path: ['tshirtSize'], message: 'invalid' })
+          if (change.addAmcr && change.university !== undefined)
+            ctx.addIssue({ code: 'custom', path: ['university'], message: 'invalid' })
+        }),
+    )
     .min(1)
-    .max(teamSize.max),
+    .max(teamSize.max)
+    .superRefine((changes, ctx) => {
+      const ids = new Set<string>()
+      changes.forEach((change, index) => {
+        if (ids.has(change.athleteId))
+          ctx.addIssue({ code: 'custom', path: [index, 'athleteId'], message: 'invalid' })
+        ids.add(change.athleteId)
+      })
+    }),
 })
 
 export type LookupInput = z.input<typeof lookupSchema>
 export type UpdateInput = z.input<typeof updateSchema>
+export type AthleteUpdate = z.output<typeof updateSchema>['changes'][number]
 
 export interface FieldIssue {
   path: string

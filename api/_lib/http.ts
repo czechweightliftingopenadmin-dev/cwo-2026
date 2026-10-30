@@ -14,6 +14,9 @@ const statuses: Record<ApiErrorCode, number> = {
   notFound: 404,
   invoiceFull: 409,
   alreadyRegistered: 409,
+  changeConflict: 409,
+  resultsClosed: 403,
+  competitionsClosed: 403,
   rateLimited: 429,
   server: 500,
 }

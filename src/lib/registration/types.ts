@@ -5,6 +5,9 @@ export type ApiErrorCode =
   | 'validation'
   | 'invoiceFull'
   | 'alreadyRegistered'
+  | 'changeConflict'
+  | 'resultsClosed'
+  | 'competitionsClosed'
   | 'closed'
   | 'notFound'
   | 'rateLimited'
@@ -28,17 +31,23 @@ export interface EditableAthlete {
   sex: Sex
   weightClass: string
   total: number
+  cwo: boolean
+  amcr: boolean
+  university: string | null
+  tshirtSize: string | null
 }
 
 export interface EditableRegistration {
   kind: 'individual' | 'team'
   teamName: string | null
+  invoiceNumber: string | null
   athletes: EditableAthlete[]
 }
 
 /** Lookup answer: every registration on the invoice that includes the e-mail. */
 export interface LookupResult {
   registrations: EditableRegistration[]
+  permissions: { results: boolean; competitions: boolean }
 }
 
 export interface UpdatedRegistration {

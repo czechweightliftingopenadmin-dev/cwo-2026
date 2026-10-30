@@ -33,7 +33,7 @@ import type { Errors } from './fields'
 
 type Phase = 'form' | 'review' | 'done'
 
-export function RegistrationForm() {
+export function RegistrationForm({ onEdit }: { onEdit?: () => void }) {
   const { t, i18n } = useTranslation()
   const errorText = useErrorText()
   const [draft, setDraft] = useState<Draft>(loadDraft)
@@ -111,7 +111,7 @@ export function RegistrationForm() {
       saveDraft(null)
       setResult(response.data)
       setPhase('done')
-    } else if (response.error === 'invoiceFull' || response.error === 'alreadyRegistered') {
+    } else if (response.error === 'invoiceFull') {
       showErrors({ invoiceNumber: response.error })
     } else if (response.error === 'validation' && response.issues?.length) {
       showErrors(toErrors(response.issues))
@@ -161,6 +161,11 @@ export function RegistrationForm() {
           <p className="notice notice-error" role="alert">
             {errorText(submitError)}
           </p>
+        )}
+        {submitError === 'alreadyRegistered' && onEdit && (
+          <button type="button" className="button button-secondary" onClick={onEdit}>
+            {t('edit.openChanges')}
+          </button>
         )}
         <div className="form-actions">
           <button

@@ -3,7 +3,7 @@ import { registrationWindows, universities } from '../../src/config/registration
 import { formatEventDates } from '../../src/lib/countdown.js'
 import type { Registration } from '../../src/lib/registration/schema.js'
 import type { EmailMessage } from './mailer.js'
-import type { StoredAthlete, StoredRegistration } from './store.js'
+import type { AthleteChange, StoredRegistration } from './store.js'
 
 type Language = 'cs' | 'en'
 
@@ -18,7 +18,9 @@ const copy = {
     greeting: 'Ahoj',
     accessTitle: 'Přístup ke změnám',
     access: (identifier: string, opens: string, closes: string) =>
-      `Od ${opens} do ${closes} můžeš na webu změnit hmotnostní kategorii a dvojboj. Zadej ${identifier} a e-mail, na který přišla tato zpráva.`,
+      `Registraci otevřeš pomocí ${identifier} a e-mailu, na který přišla tato zpráva. Od ${opens} do ${closes} můžeš změnit hmotnostní kategorii a dvojboj.`,
+    participation: (closes: string) =>
+      `Do ${closes} můžeš přes Změnu registrace přidat CWO (s číslem zaplacené faktury a tričkem) nebo AM ČR (s výběrem školy) a upravit školu či tričko.`,
     invoiceIdentifier: (invoice: string) => `číslo faktury ${invoice}`,
     codeIdentifier: (code: string) => `kód registrace ${code}`,
     otherChanges: 'Jiné změny ti zařídí organizátoři, stačí odpovědět na tento e-mail.',
@@ -53,7 +55,9 @@ const copy = {
     greeting: 'Hi',
     accessTitle: 'Making changes',
     access: (identifier: string, opens: string, closes: string) =>
-      `From ${opens} to ${closes}, you can change your bodyweight category and total on the website. Enter ${identifier} and the e-mail address this message was sent to.`,
+      `Open your registration using ${identifier}, together with the e-mail address this message was sent to. From ${opens} to ${closes}, you can change your bodyweight category and total.`,
+    participation: (closes: string) =>
+      `Until ${closes}, use Change registration to add CWO (with your paid invoice number and T-shirt size) or AM ČR (with your university), or update your university or T-shirt size.`,
     invoiceIdentifier: (invoice: string) => `invoice number ${invoice}`,
     codeIdentifier: (code: string) => `registration code ${code}`,
     otherChanges: 'For any other change, reply to this e-mail and the organisers will help.',
@@ -293,7 +297,7 @@ ${escape(`${event.name} ${event.year} · ${event.venue[language]}, ${event.addre
 function accessFooter(language: Language, invoiceNumber: string | null, accessCode: string) {
   const t = copy[language]
   const identifier = invoiceNumber
-    ? t.invoiceIdentifier(invoiceNumber)
+    ? `${t.invoiceIdentifier(invoiceNumber)} / ${t.codeIdentifier(accessCode)}`
     : t.codeIdentifier(accessCode)
   const closes = new Date(new Date(registrationWindows.edits.closesAt).getTime() - 1)
   return [
@@ -301,6 +305,12 @@ function accessFooter(language: Language, invoiceNumber: string | null, accessCo
       identifier,
       formatDate(registrationWindows.edits.opensAt, language),
       formatDate(closes.toISOString(), language),
+    ),
+    t.participation(
+      formatDate(
+        new Date(new Date(registrationWindows.registration.closesAt).getTime() - 1).toISOString(),
+        language,
+      ),
     ),
     t.otherChanges,
   ]
@@ -345,24 +355,29 @@ export function registrationEmail(registration: Registration, accessCode: string
   }
 }
 
-export interface AthleteChange {
-  before: StoredAthlete
-  weightClass: string
-  total: number
-}
-
 export function updateEmail(
   registration: StoredRegistration,
   changes: AthleteChange[],
   language: Language,
 ): EmailMessage {
   const t = copy[language]
-  const sections = changes.map(({ before, weightClass, total }): Section => {
+  const sections = changes.map(({ before, after }): Section => {
     const rows: Rows = []
-    if (before.weightClass !== weightClass)
-      rows.push([t.weightClass, `${kg(before.weightClass)} → ${kg(weightClass)}`])
-    if (before.total !== total)
-      rows.push([t.total, `${kg(String(before.total))} → ${kg(String(total))}`])
+    if (before.weightClass !== after.weightClass)
+      rows.push([t.weightClass, `${kg(before.weightClass)} → ${kg(after.weightClass)}`])
+    if (before.total !== after.total)
+      rows.push([t.total, `${kg(String(before.total))} → ${kg(String(after.total))}`])
+    const competitions = (athlete: typeof after) =>
+      [athlete.cwo && 'CWO', athlete.amcr && 'AM ČR'].filter(Boolean).join(' + ')
+    if (before.cwo !== after.cwo || before.amcr !== after.amcr)
+      rows.push([t.competitions, `${competitions(before)} → ${competitions(after)}`])
+    if (before.tshirtSize !== after.tshirtSize && after.tshirtSize)
+      rows.push([t.tshirtSize, after.tshirtSize])
+    if (before.university !== after.university && after.university)
+      rows.push([
+        t.university,
+        universities.find((item) => item.code === after.university)?.name ?? after.university,
+      ])
     return { title: `${before.firstName} ${before.lastName}`, rows, sex: before.sex }
   })
   const summary: Rows = []

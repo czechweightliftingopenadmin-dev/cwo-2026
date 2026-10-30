@@ -1,7 +1,12 @@
 import { createClient } from '@supabase/supabase-js'
 import { invoiceMaxAthletes } from '../../src/config/registration.js'
-import type { Registration, Sex } from '../../src/lib/registration/schema.js'
-import type { Startlist, StartlistEntry } from '../../src/lib/registration/types.js'
+import type {
+  AthleteUpdate,
+  Identifier,
+  Registration,
+  Sex,
+} from '../../src/lib/registration/schema.js'
+import type { ApiErrorCode, Startlist, StartlistEntry } from '../../src/lib/registration/types.js'
 
 export interface StoredAthlete {
   id: string
@@ -11,6 +16,10 @@ export interface StoredAthlete {
   weightClass: string
   total: number
   email: string
+  cwo: boolean
+  amcr: boolean
+  university: string | null
+  tshirtSize: string | null
 }
 
 export interface StoredRegistration {
@@ -25,11 +34,15 @@ export interface StoredRegistration {
 export type CreateResult =
   { id: string } | { conflict: 'invoiceFull' | 'duplicateAthlete' | 'accessCode' }
 
-export interface ResultChange {
-  id: string
-  weightClass: string
-  total: number
+export interface AthleteChange {
+  before: StoredAthlete
+  after: StoredAthlete
 }
+export interface AppliedChanges {
+  changed: number
+  registrations: { registration: StoredRegistration; changes: AthleteChange[] }[]
+}
+export type ApplyResult = AppliedChanges | { error: ApiErrorCode }
 
 export interface EmailLogEntry {
   registrationId: string
@@ -47,7 +60,12 @@ export interface Store {
     identifier: { invoiceNumber: string } | { accessCode: string },
     email: string,
   ): Promise<StoredRegistration[]>
-  updateResults(registrationId: string, changes: ResultChange[]): Promise<number>
+  applyChanges(
+    identifier: NonNullable<Identifier>,
+    email: string,
+    changes: AthleteUpdate[],
+    permissions: { results: boolean; competitions: boolean },
+  ): Promise<ApplyResult>
   recordLookupAttempt(ipHash: string): Promise<number>
   logEmail(entry: EmailLogEntry): Promise<void>
   latestStartlist(): Promise<Startlist>
@@ -72,10 +90,15 @@ export function createSupabaseStore(): Store {
         p_athletes: athletes,
         p_invoice_limit: invoiceMaxAthletes,
       })
-      // Custom codes from the migration; 23505 is a duplicate generated access code.
+      // Distinguish identity conflicts from the rare generated-code collision.
       if (error?.code === 'CW001') return { conflict: 'invoiceFull' }
       if (error?.code === 'CW002') return { conflict: 'duplicateAthlete' }
-      if (error?.code === '23505') return { conflict: 'accessCode' }
+      if (error?.code === '23505') {
+        if (error.message.includes('athletes_active_identity_key'))
+          return { conflict: 'duplicateAthlete' }
+        if (error.message.includes('registrations_access_code_key'))
+          return { conflict: 'accessCode' }
+      }
       if (error) throw error
       return { id: data as string }
     },
@@ -90,17 +113,27 @@ export function createSupabaseStore(): Store {
       return (data as StoredRegistration[] | null) ?? []
     },
 
-    async updateResults(registrationId, changes) {
-      const { data, error } = await db.rpc('update_athlete_results', {
-        p_registration_id: registrationId,
-        p_changes: changes.map(({ id, weightClass, total }) => ({
-          id,
-          weight_class: weightClass,
-          total,
-        })),
+    async applyChanges(identifier, email, changes, permissions) {
+      const { data, error } = await db.rpc('apply_registration_changes', {
+        p_invoice: 'invoiceNumber' in identifier ? identifier.invoiceNumber : null,
+        p_code: 'accessCode' in identifier ? identifier.accessCode : null,
+        p_email: email,
+        p_changes: changes,
+        p_results_open: permissions.results,
+        p_competitions_open: permissions.competitions,
+        p_invoice_limit: invoiceMaxAthletes,
       })
+      const errors: Record<string, ApiErrorCode> = {
+        CW001: 'invoiceFull',
+        CW002: 'alreadyRegistered',
+        CW003: 'notFound',
+        CW004: 'changeConflict',
+        CW005: 'resultsClosed',
+        CW006: 'competitionsClosed',
+      }
+      if (error && errors[error.code]) return { error: errors[error.code]! }
       if (error) throw error
-      return data as number
+      return data as AppliedChanges
     },
 
     async recordLookupAttempt(ipHash) {

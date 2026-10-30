@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { Features } from './features'
 import {
   editFormState,
+  canChangeRegistration,
   isRegistrationOpen,
   isVisible,
   registrationFormState,
@@ -27,6 +28,10 @@ describe('feature switches', () => {
     expect(visibleSections(december, auto)).toEqual(['about', 'registration', 'startlist', 'venue'])
     expect(visibleSections(afterEvent, auto)).toEqual(['about', 'startlist', 'venue'])
     expect(editFormState(november, auto)).toBe('upcoming')
+    expect(canChangeRegistration(november, auto)).toBe(true)
+    expect(canChangeRegistration(october, auto)).toBe(false)
+    expect(canChangeRegistration(afterEvent, auto)).toBe(false)
+    expect(canChangeRegistration(november, { ...auto, editForm: 'off' })).toBe(false)
     expect(editFormState(december, auto)).toBe('open')
   })
 

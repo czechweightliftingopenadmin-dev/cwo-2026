@@ -1,4 +1,9 @@
-import { editFormState, features, registrationFormState } from '../../src/config/features.js'
+import {
+  canChangeRegistration,
+  editFormState,
+  features,
+  registrationFormState,
+} from '../../src/config/features.js'
 import type { Features } from '../../src/config/features.js'
 import {
   generateAccessCode,
@@ -14,13 +19,13 @@ import type {
   CreatedRegistration,
   EditableRegistration,
   LookupResult,
+  ApiErrorCode,
   UpdatedRegistration,
 } from '../../src/lib/registration/types.js'
 import { apiError, hashClient, json, readJson } from './http.js'
 import type { EmailMessage, Mailer } from './mailer.js'
 import type { EmailLogEntry, Store, StoredRegistration } from './store.js'
 import { registrationEmail, updateEmail } from './templates.js'
-import type { AthleteChange } from './templates.js'
 
 export interface Deps {
   store: Store
@@ -110,13 +115,22 @@ async function authorise(
   deps: Deps,
   body: { identifier: string; email: string },
 ): Promise<Response | StoredRegistration[]> {
-  if (editFormState(deps.now(), deps.features ?? features) !== 'open') return apiError('closed')
+  if (!canChangeRegistration(deps.now(), deps.features ?? features)) return apiError('closed')
   const attempts = await deps.store.recordLookupAttempt(await hashClient(request))
   if (attempts > lookupLimit) return apiError('rateLimited')
   const identifier = parseIdentifier(body.identifier)
   const registrations = identifier ? await deps.store.findRegistrations(identifier, body.email) : []
   // One answer for every miss, so the endpoint does not reveal which invoices exist.
   return registrations.length ? registrations : apiError('notFound')
+}
+
+function changePermissions(deps: Deps) {
+  const config = deps.features ?? features
+  const now = deps.now()
+  return {
+    results: editFormState(now, config) === 'open',
+    competitions: registrationFormState(now, config) === 'open' && config.editForm !== 'off',
+  }
 }
 
 export const lookupRegistration = guard(async (request, deps) => {
@@ -129,8 +143,10 @@ export const lookupRegistration = guard(async (request, deps) => {
     registrations: registrations.map((registration): EditableRegistration => ({
       kind: registration.kind,
       teamName: registration.teamName,
+      invoiceNumber: registration.invoiceNumber,
       athletes: registration.athletes.map(({ email: _email, ...athlete }) => athlete),
     })),
+    permissions: changePermissions(deps),
   }
   return json(result, 200, noStore)
 })
@@ -142,7 +158,8 @@ export const updateRegistration = guard(async (request, deps) => {
   if (registrations instanceof Response) return registrations
 
   const issues: FieldIssue[] = []
-  const changes = new Map<StoredRegistration, AthleteChange[]>()
+  const permissions = changePermissions(deps)
+  let blocked: ApiErrorCode | undefined
   parsed.data.changes.forEach((change, index) => {
     const registration = registrations.find((item) =>
       item.athletes.some((athlete) => athlete.id === change.athleteId),
@@ -150,32 +167,60 @@ export const updateRegistration = guard(async (request, deps) => {
     const before = registration?.athletes.find((athlete) => athlete.id === change.athleteId)
     if (!registration || !before)
       issues.push({ path: `changes.${index}.athleteId`, message: 'required' })
-    else if (!weightClassesFor(before.sex).includes(change.weightClass))
+    else if (
+      change.weightClass !== undefined &&
+      !weightClassesFor(before.sex).includes(change.weightClass)
+    )
       issues.push({ path: `changes.${index}.weightClass`, message: 'required' })
-    else if (before.weightClass !== change.weightClass || before.total !== change.total)
-      changes.set(registration, [
-        ...(changes.get(registration) ?? []),
-        { before, weightClass: change.weightClass, total: change.total },
-      ])
+    else {
+      if (
+        change.weightClass !== undefined &&
+        (before.weightClass !== change.weightClass || before.total !== change.total) &&
+        !permissions.results
+      )
+        blocked = 'resultsClosed'
+      if (
+        (change.addCwo ||
+          change.addAmcr ||
+          (change.tshirtSize !== undefined && change.tshirtSize !== before.tshirtSize) ||
+          (change.university !== undefined && change.university !== before.university)) &&
+        !permissions.competitions
+      )
+        blocked = 'competitionsClosed'
+      if (change.tshirtSize !== undefined && !before.cwo)
+        issues.push({ path: `changes.${index}.tshirtSize`, message: 'invalid' })
+      if (change.university !== undefined && !before.amcr)
+        issues.push({ path: `changes.${index}.university`, message: 'invalid' })
+    }
   })
   if (issues.length) return apiError('validation', issues)
+  if (blocked) return apiError(blocked)
 
-  // Each registration gets its own update and e-mail, sent to its own athletes.
-  const result: UpdatedRegistration = { changed: 0, emailSent: changes.size > 0 }
-  for (const [registration, athleteChanges] of changes) {
-    result.changed += await deps.store.updateResults(
-      registration.id,
-      athleteChanges.map(({ before, weightClass, total }) => ({
-        id: before.id,
-        weightClass,
-        total,
-      })),
-    )
-    const sent = await sendAndLog(
-      deps,
-      updateEmail(registration, athleteChanges, parsed.data.language),
-      { registrationId: registration.id, kind: 'update' },
-    )
+  // The database rechecks ownership and windows under locks and commits all changes
+  // together. Notifications use the actual before/after values from that transaction.
+  const applied = await deps.store.applyChanges(
+    parseIdentifier(parsed.data.identifier)!,
+    parsed.data.email,
+    parsed.data.changes,
+    permissions,
+  )
+  if ('error' in applied) {
+    const invoiceIssues =
+      applied.error === 'invoiceFull' || applied.error === 'alreadyRegistered'
+        ? parsed.data.changes.flatMap((change, index) =>
+            change.addCwo
+              ? [{ path: `changes.${index}.addCwo.invoiceNumber`, message: applied.error }]
+              : [],
+          )
+        : undefined
+    return apiError(applied.error, invoiceIssues?.length ? invoiceIssues : undefined)
+  }
+  const result: UpdatedRegistration = { changed: applied.changed, emailSent: applied.changed > 0 }
+  for (const { registration, changes } of applied.registrations) {
+    const sent = await sendAndLog(deps, updateEmail(registration, changes, parsed.data.language), {
+      registrationId: registration.id,
+      kind: 'update',
+    })
     result.emailSent &&= sent
   }
   return json(result, 200, noStore)

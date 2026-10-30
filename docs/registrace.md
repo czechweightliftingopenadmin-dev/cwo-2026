@@ -13,16 +13,21 @@ GitHub Actions ──každou noc──▶ záloha do privátního repa
 
 - Formulář na webu posílá data jen na vlastní API (`api/`). Prohlížeč se k databázi nepřipojuje, takže z webu nejde nic přečíst ani přepsat.
 - Jedna faktura patří 1–4 lidem: týmu, nebo několika jednotlivcům, třeba z jednoho klubu. Na fakturu jde víc registrací, dohromady nejvýš `invoiceMaxAthletes` (4) lidí, a stejný člověk (stejný e-mail, nebo jméno a datum narození) na ní nemůže být dvakrát. Při změně registrace se podle faktury a e-mailu najdou všechny registrace na faktuře, ve kterých ten e-mail je.
+- Napříč celou databází má závodník s totožným jménem, příjmením, datem narození **a** e-mailem nejvýš jednu aktivní registraci. Jména se porovnávají bez rozdílů ve velikosti písmen, s normalizovaným Unicode a mezerami; diakritika se zachovává. E-mail se ořízne a převede na malá písmena. Samotný shodný e-mail nebo jméno mimo stejnou fakturu nestačí ke sloučení různých lidí. Duplicitní zápis se odmítne, nic se automaticky nepřepisuje.
+- **Změna registrace:** faktura i původní kód fungují spolu s e-mailem. Přidání CWO k AM ČR vyžaduje zaplacenou fakturu a tričko; přidání AM ČR k CWO vyžaduje školu. Jde o aktualizaci původního závodníka, nikoliv další registraci. Původní kód zůstane platný i po doplnění faktury. Stejně lze během registrace opravit školu a tričko; jméno, kontakty, fakturu, složení týmu a zrušení účasti řeší pořadatel.
+- Všichni závodníci z jednoho požadavku se mění v jedné transakci. Databáze znovu ověří přístup, aktuální účast, povinné údaje a kapacitu faktury pod zámky. Při chybě se neuloží ani část požadavku. Opakování stejné úspěšné změny nic znovu nevytváří ani neposílá další e-mail.
+- Při chybě serveru, spojení, validace nebo plné faktuře se vyplněný formulář zachová. Nová registrace navíc dál používá stávající lokální koncept, který se smaže až po potvrzeném uložení. Když selže pouze e-mail po úspěšném zápisu, web ukáže uloženou registraci s upozorněním, nikoliv neúspěšné uložení.
 - Pravidla formuláře jsou v jednom souboru [src/lib/registration/schema.ts](../src/lib/registration/schema.ts). Používá je prohlížeč i server.
 - Každá změna v tabulkách `registrations` a `athletes` se ukládá do `audit_log`, ať ji udělalo API, nebo někdo v dashboardu. Proto jde každou chybu vrátit.
 
-| Termín                 | Co se děje                                                 |
-| ---------------------- | ---------------------------------------------------------- |
-| 1. 11. – 15. 12.       | registrace na webu                                         |
-| 7. 12. – 15. 12.       | změna hmotnostní kategorie a dvojboje                      |
-| 6. 12. ve 23:59        | první snímek startovky, zobrazí se od 7. 12.               |
-| denně 23:59 do 16. 12. | aktualizace startovky                                      |
-| 16. 12. ve 23:59       | finální startovka, zobrazí se 17. 12. se štítkem „Finální“ |
+| Termín                 | Co se děje                                                       |
+| ---------------------- | ---------------------------------------------------------------- |
+| 1. 11. – 15. 12.       | registrace na webu                                               |
+| 1. 11. – 15. 12.       | přidání CWO/AM ČR, úprava školy a trička u existující registrace |
+| 7. 12. – 15. 12.       | změna hmotnostní kategorie a dvojboje                            |
+| 6. 12. ve 23:59        | první snímek startovky, zobrazí se od 7. 12.                     |
+| denně 23:59 do 16. 12. | aktualizace startovky                                            |
+| 16. 12. ve 23:59       | finální startovka, zobrazí se 17. 12. se štítkem „Finální“       |
 
 Termíny jsou v [src/config/registration.ts](../src/config/registration.ts). Server je hlídá sám, frontend je jen zobrazuje. Časy startovky nastavuje plán `cwo-startlist` v migraci.
 
@@ -61,7 +66,7 @@ const testing = {
 
 - `'auto'`: podle termínů (registrace 1. 11. – 15. 12., změny 7. – 15. 12., startovka od 7. 12.).
 - `'on'`: zobrazeno nebo otevřeno hned, bez ohledu na datum.
-- `'off'`: skryto nebo zavřeno.
+- `'off'`: skryto nebo zavřeno. `editForm: 'off'` zavře všechny změny. `registrationForm: 'off'` zavře nové registrace, přidávání soutěží a úpravy školy/trička; kategorie a dvojboj se dále řídí `editForm`.
 
 Na produkci je sekce Registrace vidět hned (postup a startovné). Formuláře a tlačítko „Registrace“ v úvodu se objeví samy 1. 11., do té doby sekce ukazuje, kdy se registrace otevře. Startovka se objeví sama 7. 12. Na devu je vidět a jde vyzkoušet všechno hned. Kód je v obou prostředích stejný.
 
@@ -135,7 +140,24 @@ Ruční spuštění (Run workflow) jde až ve chvíli, kdy jsou workflow ve vět
 
 ### 5. Odkaz na přihlášku
 
-Do `applicationFormUrl` v [src/config/registration.ts](../src/config/registration.ts) vlož odkaz na Google Form. Dokud je prázdný, tlačítko se nezobrazí.
+`applicationFormUrl` v [src/config/registration.ts](../src/config/registration.ts) vede na [Google přihlášku CWO 2026](https://forms.gle/sq6Bbdaxo1xmtaJN7). Postup má dva hlavní kroky:
+
+Tlačítko „Registrace“ v úvodním banneru odscrolluje do sekce Registrace, kde se cesta rozdělí:
+
+1. **Přihláška a platba:** závodník vyplní Google formulář, dostane fakturu a zaplatí ji podle pokynů. Hlavní tlačítko v prvním kroku vede přímo na Google formulář v nové kartě, takže se sem může vrátit.
+2. **Doplnění údajů na webu:** po zaplacení zadá číslo faktury a údaje k závodu do našeho formuláře. Odeslání Google přihlášky tento krok nenahrazuje. Tlačítko „Už mám zaplaceno — doplnit údaje“ vede k tomuto kroku; odkaz u popisu přepne i ze záložky změn zpět na nový formulář.
+
+Samotné AM ČR zůstává bez Google přihlášky a faktury: závodník použije rovnou náš formulář. Účast i v CWO vyžaduje oba kroky. Náš formulář kontroluje formát čísla faktury; neověřuje úhradu v účetnictví.
+
+Externí přihláška je dostupná přes tlačítka během přihlašovacího období. Doplnění údajů zůstává dostupné až do uzavření našeho formuláře; stávající termíny i přepínače se nemění. Texty postupu jsou česky i anglicky v `src/locales/`.
+
+### 6. Dostupnost Supabase bez testovacích registrací
+
+[Supabase Free může projekt pozastavit při nízké aktivitě za posledních 7 dní](https://supabase.com/docs/guides/platform/free-project-pausing). Několik databázových požadavků denně podle dokumentace obvykle stačí; samotný požadavek jednou za 5 dní není spolehlivá záruka. Placený tarif uspávání kvůli neaktivitě nepoužívá.
+
+Workflow **Check database availability** v [.github/workflows/database-health.yml](../.github/workflows/database-health.yml) každých 6 hodin ověří čtení tabulky `registrations` v `cwo-prod` i `cwo-dev`. Dotaz funguje i v prázdné databázi, přečte nejvýš jeden řádek a výsledek nezapisuje do logu. Spojení má vynucený režim pouze pro čtení. Nevznikají falešní závodníci, e-maily ani záznamy v auditu či startovce. Používá existující secrets `SUPABASE_DB_URL` a `SUPABASE_DB_URL_DEV`, stejně jako zálohy.
+
+Plán se aktivuje až po začlenění workflow do výchozí větve `main`; potom jde spustit i ručně přes **Actions → Check database availability → Run workflow**. Po třech neúspěšných pokusech běh selže. Už pozastavený projekt je potřeba nejprve ručně obnovit v Supabase Dashboardu. Pravidelné čtení pomáhá udržet aktivitu a kontrolovat dostupnost, ale nenahrazuje záruky placeného tarifu. Kontroluj také, že GitHub plánované běhy dál spouští.
 
 ## Test před spuštěním
 
@@ -158,6 +180,8 @@ Na dev adrese (větev `dev`, databáze `cwo-dev`, všechny přepínače zapnuté
 - `email_log`: odeslané a neodeslané e-maily.
 
 ### Úpravy
+
+Závodník použije záložku **Změna registrace**, fakturu nebo původní kód a svůj e-mail. Všichni nalezení členové týmu se zobrazí samostatně. Už přidané soutěže se nedají odškrtnout; před uložením je možné nově vybranou soutěž zase odškrtnout. Faktura se zadává jen při přidání CWO k původní registraci bez CWO. Už uložená faktura se tímto formulářem nepřepisuje.
 
 - **Oprava údajů** (jméno, e-mail, výměna člena týmu): uprav řádek v `athletes` v Table Editoru. Změna se zapíše do `audit_log` se zdrojem `dashboard`.
 - **Zrušení registrace**: v `registrations` nastav `status` na `cancelled`. **Nemaž řádky.** Zrušená registrace zmizí ze startovky a uvolní svá místa na faktuře.
@@ -217,3 +241,13 @@ V [src/config/features.ts](../src/config/features.ts) nastav v configu `producti
 - O každé změně přijde e-mail všem závodníkům v registraci.
 - Startovka obsahuje jen jméno, pohlaví, kategorii, dvojboj, tým, školu a soutěž. Kontakty ani datum či rok narození nezveřejňuje (snímek v databázi rok narození má, API ho vynechává).
 - Skryté pole formuláře zachytí jednoduché boty. Server jim odpoví jako úspěch, ale nic neuloží.
+
+## Nasazení změn registrací a ochrany duplicit
+
+1. Před změnou schématu udělej zálohu. Nejdřív ověř změnu na `cwo-dev`.
+2. Aplikuj novou migraci [20261030000000_registration_changes.sql](../supabase/migrations/20261030000000_registration_changes.sql) po předchozích migracích. Pro dev ji workflow **Back up registrations** po pushi změn migrace nebo zálohovacích skriptů zavede automaticky: nejdřív uloží zálohu do privátního repozitáře, spustí SQL v jedné transakci, udělá novou zálohu a ověří obnovu. Použije výhradně `SUPABASE_DB_URL_DEV`. Skript [apply-registration-changes.sh](../scripts/backup/apply-registration-changes.sh) již zavedenou funkci a unikátní index rozpozná a migraci neopakuje. Produkční schéma se tím nemění. Při zavádění nové verze pošli nejdřív zpětně kompatibilní databázovou migraci, počkej na úspěšné dokončení workflow a až potom pošli nové API a web. Pro produkci aplikuj SQL zvlášť před mergem aplikace do `main`. Pokud používáš evidenci migrací Supabase CLI, u ručně aplikovaného SQL ji také slaď. Samotný deploy webu schéma neaktualizuje.
+3. Pokud migrace ohlásí `Duplicate active athletes exist`, zastaví se. Projdi shodné jméno, příjmení, datum narození a e-mail v `registrations_overview`; ověř, která registrace má zůstat aktivní. Nic automaticky nemaž ani neslučuj. U týmu nepozastavuj celou registraci bez kontroly ostatních členů. Po ručním vyřešení migraci zopakuj.
+4. Vyzkoušej AM ČR → CWO, CWO → AM ČR, kód i fakturu s e-mailem, chybné přihlášení, plnou fakturu a opakované odeslání. Ověř, že zůstává stejný identifikátor závodníka a jeden řádek ve startovce. Změny se ve veřejné startovce objeví až v dalším snímku.
+5. Ověř zálohu a obnovu. Nový sloupec `athletes.registration_active` je odvozený z `registrations.status`: ručně ho neměň. Triggery jej udržují i při změně stavu v dashboardu a obnově z auditu. Aktualizovaný `restore.sh` jej po načtení zálohy přepočítá v rámci téže transakce; funguje i se staršími zálohami bez tohoto sloupce. Obnova s konfliktními aktivními identitami bezpečně selže a vrátí celou transakci.
+
+Databázový unikátní index `athletes_active_identity_key` chrání i souběžná odeslání a přímé úpravy v dashboardu. Zrušená registrace identitu uvolní; její opětovná aktivace narazí na chybu, pokud už existuje jiná aktivní registrace stejného člověka. Funkce pro změny a načítání soukromých údajů jsou dostupné pouze serverové roli `service_role`.

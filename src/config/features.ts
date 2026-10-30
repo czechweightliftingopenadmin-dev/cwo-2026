@@ -22,7 +22,8 @@ const production = {
   registrationSection: 'on',
   /** Registrační formulář. 'auto': 1. 11. – 15. 12. */
   registrationForm: 'auto',
-  /** Změna registrace (hmotnostní kategorie a dvojboj). 'auto': 7. 12. – 15. 12. */
+  /** Kategorie/dvojboj: 'auto' 7.–15. 12. Přidání soutěže, škola a tričko se řídí
+   *  registrationForm. 'off' zde vypíná všechny změny včetně doplňování soutěží. */
   editForm: 'auto',
   /** Sekce Startovní listina. 'auto': od 7. 12. */
   startlist: 'auto',
@@ -63,6 +64,12 @@ export const registrationFormState = (now = new Date(), config: Features = featu
 
 export const editFormState = (now = new Date(), config: Features = features) =>
   resolve(config.editForm, registrationWindows.edits, now)
+
+/** The changes tab also allows adding a competition throughout registration.
+ *  Explicitly switching edits off closes the whole changes tab. */
+export const canChangeRegistration = (now = new Date(), config: Features = features) =>
+  config.editForm !== 'off' &&
+  (editFormState(now, config) === 'open' || registrationFormState(now, config) === 'open')
 
 /** A form can be sent right now: registration, or changes to one. */
 export const isRegistrationOpen = (now = new Date(), config: Features = features) =>

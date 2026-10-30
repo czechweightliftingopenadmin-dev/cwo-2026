@@ -27,8 +27,9 @@ export const emailSettings = {
   replyTo: '',
 } as const
 
-/** Application and payment run through an external form; empty hides the link. */
-export const applicationFormUrl = ''
+/** First step for CWO: external application, followed by invoice payment.
+ *  Athletes then return to this site to enter their competition details. */
+export const applicationFormUrl = 'https://forms.gle/sq6Bbdaxo1xmtaJN7'
 
 export const priceTiers = [
   { from: '2026-11-01', to: '2026-11-15', individual: 1226, team: 3826 },

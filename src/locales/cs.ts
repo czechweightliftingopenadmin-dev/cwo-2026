@@ -107,18 +107,27 @@ export const cs = {
   registration: {
     title: 'Registrace',
     howTitle: 'Jak se přihlásit',
-    stepApply: 'Vyplň přihlášku a zaplať startovné. Číslo faktury ti organizátoři pošlou e-mailem.',
+    stepApplyTitle: 'Přihláška a platba',
+    stepApply:
+      'Vyplň přihlášku v Google formuláři. Poté dostaneš fakturu, kterou zaplatíš podle uvedených pokynů. Číslo faktury si uschovej pro další krok.',
+    stepRegisterTitle: 'Doplň údaje závodníka na tomto webu',
     stepRegister:
-      'Tady na webu vyplň registraci s číslem faktury. Pro AM ČR faktura potřeba není, místo ní dostaneš kód registrace.',
+      'Po zaplacení se vrať sem a do formuláře níže zadej číslo faktury a údaje k závodu: kategorii, předpokládaný dvojboj, kontakty a velikost trička. Samotná přihláška v Google formuláři tento krok nenahrazuje.',
+    amcrNote:
+      'Jdeš pouze na AM ČR? Vyplň rovnou formulář níže. Google přihláška ani faktura nejsou potřeba. Pro účast i v CWO projdi oba kroky výše.',
     stepConfirm:
-      'Přijde ti e-mail se všemi údaji. Od {{from}} do {{to}} můžeš změnit hmotnostní kategorii a dvojboj.',
-    applyLink: 'Přejít na přihlášku',
-    pricesTitle: 'Startovné',
+      'Přijde ti potvrzení e-mailem. Přes Změnu registrace můžeš doplnit druhou soutěž, školu nebo tričko. Od {{from}} do {{to}} můžeš změnit i hmotnostní kategorii a dvojboj.',
+    applyLink: 'Přihláška a platba',
+    detailsLink: 'Už mám zaplaceno — doplnit údaje',
+    detailsTitle: 'Doplnění údajů závodníka',
+    detailsIntro:
+      'Pro CWO si připrav číslo zaplacené faktury (8 číslic). Přihlášku a platbu vyřídíš přes tlačítko výše. Pokud jdeš pouze na AM ČR, fakturu nepotřebuješ.',
+    pricesTitle: 'Startovné CWO',
     pricesPeriod: 'Termín přihlášky',
     individual: 'Jednotlivec',
     team: 'Tým',
     tabsLabel: 'Registrace a změny',
-    tabRegister: 'Registrace',
+    tabRegister: 'Doplnění údajů',
     tabEdit: 'Změna registrace',
     upcoming: 'Registrace se otevře {{date}}.',
     closed: 'Registrace byla uzavřena. Se změnami ti pomůžou organizátoři.',
@@ -167,13 +176,14 @@ export const cs = {
     errorSummary_few: 'Oprav prosím {{count}} chyby ve formuláři.',
     errorSummary_other: 'Oprav prosím {{count}} chyb ve formuláři.',
     reviewTitle: 'Zkontroluj údaje',
-    reviewText: 'Po odeslání půjde měnit už jen hmotnostní kategorie a dvojboj.',
+    reviewText:
+      'Zkontroluj hlavně jméno, datum narození a kontakty. Soutěž, školu a tričko můžeš později doplnit přes Změnu registrace; kategorii a dvojboj v termínu pro změny.',
     back: 'Upravit údaje',
     submit: 'Odeslat registraci',
     submitting: 'Odesílám…',
     doneTitle: 'Registrace je hotová',
     doneCode: 'Kód registrace',
-    doneInvoice: 'Ke změnám použij číslo faktury {{invoice}} a svůj e-mail.',
+    doneInvoice: 'Ke změnám použij číslo faktury {{invoice}} nebo tento kód a svůj e-mail.',
     doneCodeOnly: 'Ke změnám použij tento kód a svůj e-mail. Ulož si ho.',
     emailSent: 'Potvrzení se všemi údaji jsme poslali e-mailem.',
     emailFailed:
@@ -200,7 +210,12 @@ export const cs = {
       invoiceFull:
         'Na toto číslo faktury jsou už registrovaní 4 lidé. Zkontroluj číslo, případně napiš organizátorům.',
       alreadyRegistered:
-        'Tento závodník je na toto číslo faktury už registrovaný (stejný e-mail nebo jméno a datum narození). Od 7. 12. jde údaje změnit v záložce Změna registrace, jinak napiš organizátorům.',
+        'Zadané údaje odpovídají již existující registraci. Pro doplnění soutěže nebo změnu údajů použij Změnu registrace s původním kódem nebo fakturou a e-mailem. Pokud se nemůžeš přihlásit, napiš organizátorům.',
+      changeConflict:
+        'Registrace se mezitím změnila nebo tuto změnu nelze provést. Načti ji znovu; s opravou faktury nebo osobních údajů pomůžou organizátoři.',
+      resultsClosed: 'Hmotnostní kategorii a dvojboj lze měnit jen v termínu 7.–15. 12.',
+      competitionsClosed:
+        'Termín pro přidání soutěže nebo změnu školy a trička už není otevřený. Napiš organizátorům.',
       duplicateEmail: 'Každý člen týmu potřebuje vlastní e-mail.',
       closed: 'Teď to nejde. Registrace nebo změny nejsou otevřené.',
       notFound: 'Registraci jsme nenašli. Zkontroluj číslo faktury nebo kód a e-mail.',
@@ -213,7 +228,15 @@ export const cs = {
     upcoming: 'Změny budou možné od {{date}}.',
     closed: 'Změny už nejsou možné. Napiš prosím organizátorům.',
     intro:
-      'Do {{date}} můžeš změnit hmotnostní kategorii a dvojboj. Zadej číslo faktury, u AM ČR kód registrace, a e-mail z registrace.',
+      'Zadej číslo faktury nebo kód z potvrzovacího e-mailu a e-mail z registrace. Do {{date}} můžeš přidat CWO či AM ČR a upravit školu nebo tričko. Kategorii a dvojboj lze měnit 7.–15. 12.',
+    participationHint:
+      'Můžeš přidat další soutěž a doplnit potřebné údaje. Už přidané soutěže zůstávají zachované; zrušení účasti, změnu faktury nebo osobních údajů řeš s organizátory.',
+    resultsWindow:
+      'Hmotnostní kategorii a dvojboj lze měnit od {{from}} do {{to}}. Ostatní dostupné údaje můžeš doplnit už teď.',
+    detailsClosed: 'Přidání soutěže a úpravy školy či trička jsou nyní uzavřené.',
+    invoiceHint:
+      'Číslo zaplacené faktury za CWO (8 číslic). Původní registrace AM ČR i její kód zůstanou zachované.',
+    openChanges: 'Otevřít změnu registrace',
     identifier: 'Číslo faktury nebo kód registrace',
     email: 'E-mail z registrace',
     found: 'Registrace na tuto fakturu',

@@ -113,19 +113,27 @@ export const en: TranslationShape<typeof cs> = {
   registration: {
     title: 'Registration',
     howTitle: 'How to enter',
+    stepApplyTitle: 'Application and payment',
     stepApply:
-      'Fill in the application and pay the entry fee. The organisers will e-mail you the invoice number.',
+      'Complete the Google application form. You will then receive an invoice; pay it following the instructions provided. Keep the invoice number for the next step.',
+    stepRegisterTitle: 'Add your athlete details on this website',
     stepRegister:
-      'Register here with your invoice number. AM ČR needs no invoice; you will get a registration code instead.',
+      'After paying, return here and enter your invoice number and competition details in the form below: bodyweight category, expected total, contact details and T-shirt size. Completing the Google application does not replace this step.',
+    amcrNote:
+      'Competing only in AM ČR? Complete the form below directly. You do not need the Google application or an invoice. To compete in CWO as well, complete both steps above.',
     stepConfirm:
-      'You will receive an e-mail with all your details. From {{from}} to {{to}}, you can change your bodyweight category and total.',
-    applyLink: 'Go to the application',
-    pricesTitle: 'Entry fee',
+      'You will receive a confirmation e-mail. Use Change registration to add the other competition, university or T-shirt details. From {{from}} to {{to}}, you can also change your bodyweight category and total.',
+    applyLink: 'Application and payment',
+    detailsLink: 'Already paid — add athlete details',
+    detailsTitle: 'Athlete details',
+    detailsIntro:
+      'For CWO, have your paid invoice number ready (8 digits). Use the button above for the application and payment. If you are competing only in AM ČR, you do not need an invoice.',
+    pricesTitle: 'CWO entry fee',
     pricesPeriod: 'Application period',
     individual: 'Individual',
     team: 'Team',
     tabsLabel: 'Registration and changes',
-    tabRegister: 'Registration',
+    tabRegister: 'Athlete details',
     tabEdit: 'Change registration',
     upcoming: 'Registration opens on {{date}}.',
     closed: 'Registration is closed. The organisers can help with changes.',
@@ -174,13 +182,15 @@ export const en: TranslationShape<typeof cs> = {
     errorSummary_few: 'Please fix {{count}} errors in the form.',
     errorSummary_other: 'Please fix {{count}} errors in the form.',
     reviewTitle: 'Check your details',
-    reviewText: 'After submitting, only the bodyweight category and total can be changed.',
+    reviewText:
+      'Check your name, date of birth and contact details carefully. You can add a competition, university and T-shirt details later using Change registration; category and total changes have a separate editing window.',
     back: 'Edit details',
     submit: 'Submit registration',
     submitting: 'Submitting…',
     doneTitle: 'Registration complete',
     doneCode: 'Registration code',
-    doneInvoice: 'To make changes, use invoice number {{invoice}} and your e-mail.',
+    doneInvoice:
+      'To make changes, use invoice number {{invoice}} or this code, together with your e-mail.',
     doneCodeOnly: 'To make changes, use this code and your e-mail. Keep it safe.',
     emailSent: 'We have e-mailed a confirmation with all your details.',
     emailFailed:
@@ -207,7 +217,13 @@ export const en: TranslationShape<typeof cs> = {
       invoiceFull:
         'Four people are already registered on this invoice number. Check the number, or contact the organisers.',
       alreadyRegistered:
-        'This athlete is already registered on this invoice (same e-mail, or same name and date of birth). From 7 December, use Change registration; otherwise contact the organisers.',
+        'These details match an existing registration. To add a competition or change details, use Change registration with the original code or invoice and e-mail. If you cannot access it, contact the organisers.',
+      changeConflict:
+        'The registration has changed or this change is not allowed. Load it again; contact the organisers to correct an invoice or personal details.',
+      resultsClosed:
+        'Bodyweight category and total changes are only available from 7 to 15 December.',
+      competitionsClosed:
+        'Adding competitions or changing university and T-shirt details is not open now. Please contact the organisers.',
       duplicateEmail: 'Each team member needs their own e-mail.',
       closed: 'This is not possible now. Registration or changes are not open.',
       notFound:
@@ -221,7 +237,16 @@ export const en: TranslationShape<typeof cs> = {
     upcoming: 'Changes will be possible from {{date}}.',
     closed: 'Changes are no longer possible. Please contact the organisers.',
     intro:
-      'Until {{date}}, you can change the bodyweight category and total. Enter the invoice number (for AM ČR, the registration code) and the e-mail from your registration.',
+      'Enter your invoice number or the code from your confirmation e-mail, together with the e-mail from your registration. Until {{date}}, you can add CWO or AM ČR and update your university or T-shirt size. Category and total changes are available from 7 to 15 December.',
+    participationHint:
+      'You can add another competition and fill in the required details. Existing entries stay selected; contact the organisers to cancel participation or correct an invoice or personal details.',
+    resultsWindow:
+      'Bodyweight category and total changes are available from {{from}} to {{to}}. You can fill in the other available details now.',
+    detailsClosed:
+      'Adding competitions and changing university or T-shirt details is currently closed.',
+    invoiceHint:
+      'The paid CWO invoice number (8 digits). Your original AM ČR registration and its code will stay valid.',
+    openChanges: 'Open Change registration',
     identifier: 'Invoice number or registration code',
     email: 'E-mail from the registration',
     found: 'Registrations on this invoice',
