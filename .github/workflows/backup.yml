@@ -19,7 +19,10 @@ on:
   # and checks that the backup restores to identical data.
   push:
     branches: [dev]
-    paths: [.github/workflows/backup.yml, scripts/backup/**]
+    paths:
+      - .github/workflows/backup.yml
+      - scripts/backup/**
+      - supabase/migrations/20261030000000_registration_changes.sql
 permissions:
   contents: read
 concurrency: backup
@@ -48,7 +51,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: site
-          sparse-checkout: scripts/backup
+          sparse-checkout: |
+            scripts/backup
+            supabase/migrations
 
       - name: Check out the backup repository
         if: steps.config.outputs.ready == 'true'
@@ -71,6 +76,32 @@ jobs:
         env:
           DB_URL: ${{ (github.event_name == 'push' || inputs.target == 'dev') && secrets.SUPABASE_DB_URL_DEV || secrets.SUPABASE_DB_URL }}
         run: bash site/scripts/backup/dump.sh "$DB_URL" "backups/$TARGET/$(TZ=Europe/Prague date +%Y-%m-%d)"
+
+      # Save a recovery point before changing schema; this uses the existing private
+      # backup repository and deploy key. The production database is never migrated.
+      - name: Save dev backup before schema update
+        if: steps.config.outputs.ready == 'true' && env.TARGET == 'dev'
+        working-directory: backups
+        run: |
+          git config user.name "cwo-backup"
+          git config user.email "cwo-backup@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && exit 0
+          git commit -q -m "Back up dev before schema check"
+          git push -q
+
+      - name: Apply registration changes schema (dev only)
+        if: steps.config.outputs.ready == 'true' && env.TARGET == 'dev'
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL_DEV }}
+        run: |
+          set -euo pipefail
+          backup="backups/dev/$(TZ=Europe/Prague date +%Y-%m-%d)"
+          bash site/scripts/backup/apply-registration-changes.sh "$DB_URL" \
+            site/supabase/migrations/20261030000000_registration_changes.sql "$backup"
+          # A fresh post-migration backup includes the new derived column and audit
+          # entries. The pre-migration snapshot remains in its own subdirectory.
+          bash site/scripts/backup/dump.sh "$DB_URL" "$backup"
 
       - name: Restore check (dev only)
         if: steps.config.outputs.ready == 'true' && env.TARGET == 'dev'

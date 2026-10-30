@@ -2,7 +2,7 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { PGlite } from '@electric-sql/pglite'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 // Runs the real migrations in an in-memory Postgres. pg_cron and the Supabase roles
 // do not exist there, so the scheduler call is skipped and the roles are created.
@@ -20,6 +20,9 @@ beforeEach(async () => {
   db = new PGlite()
   await db.exec(`create role anon; create role authenticated; create role service_role bypassrls;`)
   await db.exec(migrations)
+})
+afterEach(async () => {
+  await db.close()
 })
 
 const athlete = (overrides: Record<string, unknown> = {}) => ({
@@ -232,5 +235,297 @@ describe('registration migration', () => {
     await expect(db.query('select public.find_registrations(null, null, null)')).rejects.toThrow(
       'permission denied',
     )
+  })
+})
+
+async function applyChanges(
+  identifier: string,
+  changes: Record<string, unknown>[],
+  options: { email?: string; results?: boolean; competitions?: boolean } = {},
+) {
+  return (
+    await db.query<{
+      result: {
+        changed: number
+        registrations: { registration: Record<string, unknown>; changes: unknown[] }[]
+      }
+    }>('select public.apply_registration_changes($1, $2, $3, $4, $5, $6, 4) as result', [
+      /^\d{8}$/.test(identifier) ? identifier : null,
+      /^\d{8}$/.test(identifier) ? null : identifier,
+      options.email ?? 'jana@example.cz',
+      changes,
+      options.results ?? true,
+      options.competitions ?? true,
+    ])
+  ).rows[0]!.result
+}
+async function onlyAthlete() {
+  return (await db.query<{ id: string }>('select id from public.athletes')).rows[0]!.id
+}
+const amOnly = () => athlete({ cwo: false, amcr: true, university: 'MU', tshirtSize: null })
+
+describe('identity protection and competition changes', () => {
+  it('blocks duplicate AM CR and cross-invoice registrations with normalised full identity', async () => {
+    await create({ invoiceNumber: null, accessCode: 'AM-AAAA-AAAA' }, [amOnly()])
+    const before = await audit()
+    await expect(
+      create({ invoiceNumber: null, accessCode: 'AM-AAAA-AAAB' }, [amOnly()]),
+    ).rejects.toMatchObject({ code: '23505' })
+    await expect(
+      create({ invoiceNumber: '87654321', accessCode: 'CW-AAAA-AAAC' }, [
+        athlete({ firstName: ' JANA ', lastName: '  NOVÁKOVÁ  ' }),
+      ]),
+    ).rejects.toMatchObject({ code: '23505' })
+    expect((await db.query('select * from public.registrations')).rows).toHaveLength(1)
+    expect(await audit()).toEqual(before)
+  })
+
+  it('handles two simultaneous submissions as one athlete and rolls back the losing registration', async () => {
+    const results = await Promise.allSettled([
+      create({ invoiceNumber: null, accessCode: 'AM-AAAA-AAAA' }, [amOnly()]),
+      create({ invoiceNumber: null, accessCode: 'AM-AAAA-AAAB' }, [amOnly()]),
+    ])
+    expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(1)
+    expect((await db.query('select * from public.athletes')).rows).toHaveLength(1)
+    expect((await db.query('select * from public.registrations')).rows).toHaveLength(1)
+  })
+
+  it('does not merge different people who share a name or email', async () => {
+    await create({ invoiceNumber: null, accessCode: 'AM-AAAA-AAAA' }, [amOnly()])
+    await create({ invoiceNumber: null, accessCode: 'AM-AAAA-AAAB' }, [
+      athlete({ ...amOnly(), birthDate: '2001-05-01' }),
+    ])
+    await create({ invoiceNumber: null, accessCode: 'AM-AAAA-AAAC' }, [
+      athlete({ ...amOnly(), email: 'other@example.cz' }),
+    ])
+    expect((await db.query('select * from public.athletes')).rows).toHaveLength(3)
+  })
+
+  it('protects direct inserts and cancellation/reactivation as well as the API', async () => {
+    const id = await create({ invoiceNumber: null, accessCode: 'AM-AAAA-AAAA' }, [amOnly()])
+    await db.query('update public.athletes set registration_active = false')
+    expect((await db.query('select registration_active from public.athletes')).rows[0]).toEqual({
+      registration_active: true,
+    })
+    await db.query("update public.registrations set status = 'cancelled' where id = $1", [id])
+    await create({ invoiceNumber: null, accessCode: 'AM-AAAA-AAAB' }, [amOnly()])
+    await expect(
+      db.query("update public.registrations set status = 'active' where id = $1", [id]),
+    ).rejects.toMatchObject({ code: '23505' })
+    expect((await db.query('select * from public.public_startlist')).rows).toHaveLength(1)
+  })
+
+  it('adds CWO to AM CR in place, preserves the original code and makes the invoice usable', async () => {
+    const registrationId = await create({ invoiceNumber: null, accessCode: 'AM-AAAA-AAAA' }, [
+      amOnly(),
+    ])
+    const athleteId = await onlyAthlete()
+    const request = [{ athleteId, addCwo: { invoiceNumber: '12345678', tshirtSize: 'M' } }]
+    const result = await applyChanges('AM-AAAA-AAAA', request, { results: false })
+    expect(result.changed).toBe(1)
+    expect(result.registrations[0]!.registration).toMatchObject({
+      id: registrationId,
+      invoiceNumber: '12345678',
+      accessCode: 'AM-AAAA-AAAA',
+    })
+    expect(
+      (await db.query('select id, cwo, amcr, university, tshirt_size from public.athletes')).rows,
+    ).toEqual([{ id: athleteId, cwo: true, amcr: true, university: 'MU', tshirt_size: 'M' }])
+    for (const [invoice, code] of [
+      ['12345678', null],
+      [null, 'AM-AAAA-AAAA'],
+    ]) {
+      const found = await db.query<{ result: unknown[] }>(
+        'select public.find_registrations($1, $2, $3) as result',
+        [invoice, code, 'JANA@example.cz'],
+      )
+      expect(found.rows[0]!.result).toHaveLength(1)
+    }
+    const before = await audit()
+    expect((await applyChanges('AM-AAAA-AAAA', request)).changed).toBe(0)
+    expect(await audit()).toEqual(before)
+    expect((await db.query('select * from public.public_startlist')).rows).toHaveLength(1)
+    expect(
+      (await applyChanges('12345678', [{ athleteId, university: 'UK', tshirtSize: 'L' }])).changed,
+    ).toBe(1)
+  })
+
+  it('adds AM CR by invoice or code, with a university, and does not duplicate team members', async () => {
+    await create({ kind: 'team', teamName: 'Brno' }, [
+      athlete(),
+      athlete({ firstName: 'Eva', email: 'eva@example.cz' }),
+      athlete({ firstName: 'Petr', email: 'petr@example.cz' }),
+    ])
+    const athleteId = (
+      await db.query<{ id: string }>("select id from public.athletes where first_name = 'Jana'")
+    ).rows[0]!.id
+    expect(
+      (
+        await applyChanges('12345678', [{ athleteId, addAmcr: { university: 'MU' } }], {
+          results: false,
+        })
+      ).changed,
+    ).toBe(1)
+    expect((await applyChanges('CW-ABCD-EFGH', [{ athleteId, university: 'UK' }])).changed).toBe(1)
+    expect((await db.query('select * from public.athletes')).rows).toHaveLength(3)
+    expect((await db.query('select kind from public.registrations')).rows).toEqual([
+      { kind: 'team' },
+    ])
+  })
+
+  it('rejects missing invoice, T-shirt or school without changing anything', async () => {
+    await create({ invoiceNumber: null, accessCode: 'AM-AAAA-AAAA' }, [amOnly()])
+    const athleteId = await onlyAthlete()
+    for (const addCwo of [
+      { tshirtSize: 'M' },
+      { invoiceNumber: '12345678' },
+      { invoiceNumber: 'bad', tshirtSize: 'M' },
+    ]) {
+      await expect(applyChanges('AM-AAAA-AAAA', [{ athleteId, addCwo }])).rejects.toMatchObject({
+        code: 'CW004',
+      })
+    }
+    expect((await db.query('select cwo from public.athletes')).rows).toEqual([{ cwo: false }])
+    expect((await db.query('select invoice_number from public.registrations')).rows).toEqual([
+      { invoice_number: null },
+    ])
+  })
+
+  it('rechecks authentication and rejects a foreign athlete even with a valid invoice', async () => {
+    await create()
+    const athleteId = await onlyAthlete()
+    const change = [{ athleteId, addAmcr: { university: 'MU' } }]
+    await expect(
+      applyChanges('12345678', change, { email: 'wrong@example.cz' }),
+    ).rejects.toMatchObject({ code: 'CW003' })
+    await expect(applyChanges('AM-AAAA-AAAA', change)).rejects.toMatchObject({ code: 'CW003' })
+    await expect(
+      applyChanges('12345678', [{ athleteId: crypto.randomUUID(), total: 160, weightClass: '61' }]),
+    ).rejects.toMatchObject({ code: 'CW003' })
+    expect((await db.query('select amcr from public.athletes')).rows).toEqual([{ amcr: false }])
+  })
+
+  it('enforces both editing windows inside the database and rolls back a mixed request', async () => {
+    await create()
+    const athleteId = await onlyAthlete()
+    const before = await audit()
+    await expect(
+      applyChanges(
+        '12345678',
+        [{ athleteId, weightClass: '69', total: 155, addAmcr: { university: 'MU' } }],
+        { results: false },
+      ),
+    ).rejects.toMatchObject({ code: 'CW005' })
+    await expect(
+      applyChanges(
+        '12345678',
+        [{ athleteId, weightClass: '69', total: 155, addAmcr: { university: 'MU' } }],
+        { competitions: false },
+      ),
+    ).rejects.toMatchObject({ code: 'CW006' })
+    expect(await audit()).toEqual(before)
+    expect((await db.query('select total, amcr from public.athletes')).rows).toEqual([
+      { total: 150, amcr: false },
+    ])
+  })
+
+  it('checks invoice capacity for an upgrade and leaves the AM CR entry intact on failure', async () => {
+    for (let n = 0; n < 4; n++)
+      await create({ accessCode: `CW-AAAA-AAA${'ABCD'[n]}` }, [
+        athlete({ firstName: `Person${n}`, email: `person${n}@example.cz` }),
+      ])
+    const id = await create({ invoiceNumber: null, accessCode: 'AM-AAAA-AAAA' }, [amOnly()])
+    const athleteId = (
+      await db.query<{ id: string }>('select id from public.athletes where registration_id = $1', [
+        id,
+      ])
+    ).rows[0]!.id
+    await expect(
+      applyChanges('AM-AAAA-AAAA', [
+        { athleteId, addCwo: { invoiceNumber: '12345678', tshirtSize: 'M' } },
+      ]),
+    ).rejects.toMatchObject({ code: 'CW001' })
+    expect(
+      (await db.query('select invoice_number from public.registrations where id = $1', [id]))
+        .rows[0],
+    ).toEqual({ invoice_number: null })
+  })
+
+  it('does not let a retried or stale request replace the saved invoice', async () => {
+    await create()
+    const athleteId = await onlyAthlete()
+    await expect(
+      applyChanges('12345678', [
+        { athleteId, addCwo: { invoiceNumber: '87654321', tshirtSize: 'M' } },
+      ]),
+    ).rejects.toMatchObject({ code: 'CW004' })
+    expect((await db.query('select invoice_number from public.registrations')).rows).toEqual([
+      { invoice_number: '12345678' },
+    ])
+  })
+
+  it('keeps private update functions inaccessible to anonymous callers', async () => {
+    await create()
+    const athleteId = await onlyAthlete()
+    await db.exec('set role anon')
+    await expect(
+      applyChanges('12345678', [{ athleteId, addAmcr: { university: 'MU' } }]),
+    ).rejects.toThrow('permission denied')
+    await expect(
+      db.query('select public.registration_details($1)', [crypto.randomUUID()]),
+    ).rejects.toThrow('permission denied')
+  })
+})
+
+describe('migration rollout and legacy backup compatibility', () => {
+  it('refuses pre-existing active duplicates without merging or deleting their data', async () => {
+    await db.close()
+    db = new PGlite()
+    await db.exec(
+      'create role anon; create role authenticated; create role service_role bypassrls;',
+    )
+    const files = readdirSync(migrationsDir).sort()
+    const original = files
+      .slice(0, -1)
+      .map((file) => readFileSync(join(migrationsDir, file), 'utf8'))
+      .join('\n')
+      .replace(/^create extension if not exists pg_cron.*$/m, '')
+      .replace(/^select cron\.schedule\([\s\S]*?\);$/m, '')
+    await db.exec(original)
+    await create({ invoiceNumber: null, accessCode: 'AM-AAAA-AAAA' }, [amOnly()])
+    await create({ invoiceNumber: null, accessCode: 'AM-AAAA-AAAB' }, [amOnly()])
+    await expect(
+      db.exec('begin;\n' + readFileSync(join(migrationsDir, files.at(-1)!), 'utf8')),
+    ).rejects.toThrow('Duplicate active athletes exist')
+    await db.exec('rollback')
+    expect((await db.query('select * from public.athletes')).rows).toHaveLength(2)
+    expect((await db.query('select * from public.registrations')).rows).toHaveLength(2)
+  })
+
+  it('rebuilds active identity flags with restore triggers disabled without adding audit entries', async () => {
+    const cancelled = await create({ invoiceNumber: null, accessCode: 'AM-AAAA-AAAA' }, [amOnly()])
+    await db.query("update public.registrations set status = 'cancelled' where id = $1", [
+      cancelled,
+    ])
+    await create({ invoiceNumber: null, accessCode: 'AM-AAAA-AAAB' }, [amOnly()])
+    const before = await audit()
+    await db.exec(
+      'set session_replication_role = replica; update public.athletes set registration_active = false;',
+    )
+    await db.exec(
+      "update public.athletes a set registration_active = (r.status = 'active') from public.registrations r where r.id = a.registration_id;",
+    )
+    await db.exec('set session_replication_role = origin')
+    expect(
+      (
+        await db.query(
+          'select registration_active from public.athletes order by registration_active',
+        )
+      ).rows,
+    ).toEqual([{ registration_active: false }, { registration_active: true }])
+    expect(await audit()).toEqual(before)
+    await expect(
+      create({ invoiceNumber: null, accessCode: 'AM-AAAA-AAAC' }, [amOnly()]),
+    ).rejects.toMatchObject({ code: '23505' })
   })
 })

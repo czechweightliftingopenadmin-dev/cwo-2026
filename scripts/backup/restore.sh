@@ -13,6 +13,11 @@ dir=$2
   echo "truncate public.email_log, public.lookup_attempts, public.startlist_snapshots,"
   echo "  public.audit_log, public.athletes, public.registrations restart identity;"
   gzip -dc "$dir/data.sql.gz"
+  # Legacy backups have no registration_active column. Rebuild this derived flag
+  # while audit triggers are still off; the unique index checks active identities.
+  # Any conflict aborts the complete restore, leaving the current database intact.
+  echo "update public.athletes a set registration_active = (r.status = 'active')"
+  echo "from public.registrations r where r.id = a.registration_id;"
 } | psql "$url" -v ON_ERROR_STOP=1 -q --single-transaction > /dev/null
 
 psql "$url" -At \
