@@ -50,6 +50,47 @@ async function choose(page: Page, label: string, option: string) {
   await page.getByRole('option', { name: option, exact: true }).click()
 }
 
+test('an open university picker allows scrolling the page and still accepts a choice', async ({
+  page,
+  isMobile,
+}) => {
+  await page.goto('/#registration')
+  await page.getByRole('checkbox', { name: 'Akademické mistrovství ČR', exact: true }).check()
+  const university = page.getByLabel('Vysoká škola', { exact: true })
+  await university.click()
+  await expect(page.getByRole('listbox')).toBeVisible()
+  const before = await page.evaluate(() => scrollY)
+  const { width, height } = await page.evaluate(() => ({ width: innerWidth, height: innerHeight }))
+  // Scroll beside the options, as a user scrolling the surrounding page would.
+  if (isMobile) {
+    const session = await page.context().newCDPSession(page)
+    const x = width - 12
+    const y = Math.round(height * 0.8)
+    await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] })
+    for (let distance = 20; distance <= 220; distance += 20) {
+      await session.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: [{ x, y: y - distance }],
+      })
+      // Give the touch gesture a realistic duration; this is not a wait for page readiness.
+      await page.waitForTimeout(20)
+    }
+    await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+    await session.detach()
+  } else {
+    await page.mouse.move(width - 12, Math.round(height * 0.75))
+    await page.mouse.wheel(0, 220)
+  }
+  await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(before + 80)
+  await expect(page.getByRole('listbox')).toBeVisible()
+  await page.getByRole('option', { name: 'Masarykova univerzita', exact: true }).click()
+  await expect(university).toContainText('Masarykova univerzita')
+  await university.click()
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('listbox')).toHaveCount(0)
+  await expect(university).toBeFocused()
+})
+
 test('AM CR gains CWO without losing entered data after server, network or validation errors', async ({
   page,
 }) => {

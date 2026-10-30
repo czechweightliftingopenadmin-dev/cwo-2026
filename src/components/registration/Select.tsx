@@ -42,6 +42,7 @@ export function Select<T extends string | number>({
           <ChevronDown size={16} aria-hidden="true" />
         </ListboxButton>
         <ListboxOptions
+          modal={false}
           anchor={inline ? undefined : { to: 'bottom start', gap: 4 }}
           className={inline ? 'select-options select-options-inline' : 'select-options'}
         >
