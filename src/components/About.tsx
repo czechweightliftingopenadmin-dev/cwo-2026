@@ -121,7 +121,6 @@ export function About() {
                 </div>
               ))}
             </dl>
-            <p>{t('about.individuals.minimumParticipants')}</p>
             <p>{t('about.individuals.scoring')}</p>
             <a
               className="rules-reference"

@@ -54,8 +54,6 @@ export const en: TranslationShape<typeof cs> = {
         'The individual men’s category is open to male athletes who turn at least 15 in the calendar year of the competition.',
       description:
         'Women and men compete separately in bodyweight groups according to IWF and ČSV rules. Category allocation is based on the athlete’s bodyweight at the weigh-in on the day of the competition.',
-      minimumParticipants:
-        'At least 5 athletes are required to open a bodyweight group. If fewer athletes register, the organiser reserves the right to merge adjacent groups based on participant numbers, typically into the next higher category.',
       scoring:
         'The final ranking in each bodyweight group is determined by the highest valid total achieved — the sum of the best successful snatch and clean & jerk.',
       weighInRules:

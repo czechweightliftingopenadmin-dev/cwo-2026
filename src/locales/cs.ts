@@ -48,8 +48,6 @@ export const cs = {
         'Kategorie jednotlivci muži je určena pro muže a chlapce s minimálním věkem 15 let dovršených v kalendářním roce konání soutěže.',
       description:
         'Ženy a muži soutěží odděleně v hmotnostních skupinách dle pravidel IWF a ČSV. Zařazení odpovídá hmotnosti závodnice nebo závodníka při vážení v den soutěže.',
-      minimumParticipants:
-        'Minimální počet závodnic nebo závodníků pro otevření dané hmotnostní skupiny je 5. Při nižším počtu registrovaných si pořadatel vyhrazuje právo sloučit skupiny podle počtu účastníků v nejbližších hmotnostních skupinách, typicky směrem do vyšší kategorie.',
       scoring:
         'Výsledné pořadí v každé hmotnostní skupině je určeno seřazením nejvyšších dosažených hodnot platného dvojboje — součtu nejlepšího platného pokusu v trhu a v nadhozu.',
       weighInRules:
