@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { teamSize, universities } from '../../config/registration'
 import { registerAthletes } from '../../lib/registration/api'
 import type { ClientErrorCode } from '../../lib/registration/api'
-import { formatBirthDate, kg } from '../../lib/registration/format'
+import { countryName, formatBirthDate, kg } from '../../lib/registration/format'
 import { registrationSchema, toFieldIssues } from '../../lib/registration/schema'
 import type { CreatedRegistration } from '../../lib/registration/types'
 import { AthleteFields } from './AthleteFields'
@@ -379,6 +379,10 @@ function Review({ draft }: { draft: Draft }) {
           [
             t('registration.sex'),
             t(athlete.sex === 'F' ? 'registration.female' : 'registration.male'),
+          ],
+          [
+            t('registration.nationality'),
+            `${countryName(athlete.nationality, i18n.language)} (${athlete.nationality})`,
           ],
           [t('registration.reviewWeightClass'), kg(athlete.weightClass)],
           [t('registration.reviewTotal'), kg(athlete.total)],

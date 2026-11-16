@@ -30,6 +30,7 @@ const athlete = (overrides: Record<string, unknown> = {}) => ({
   lastName: 'Nováková',
   birthDate: '2000-05-01',
   sex: 'F',
+  nationality: 'CZE',
   weightClass: '61',
   total: 150,
   email: 'jana@example.cz',
@@ -265,19 +266,27 @@ async function onlyAthlete() {
 const amOnly = () => athlete({ cwo: false, amcr: true, university: 'MU', tshirtSize: null })
 
 describe('identity protection and competition changes', () => {
-  it('blocks duplicate AM CR and cross-invoice registrations with normalised full identity', async () => {
+  it('blocks duplicate AM CR and cross-invoice registrations with a normalised identity', async () => {
     await create({ invoiceNumber: null, accessCode: 'AM-AAAA-AAAA' }, [amOnly()])
     const before = await audit()
     await expect(
       create({ invoiceNumber: null, accessCode: 'AM-AAAA-AAAB' }, [amOnly()]),
     ).rejects.toMatchObject({ code: '23505' })
-    await expect(
-      create({ invoiceNumber: '87654321', accessCode: 'CW-AAAA-AAAC' }, [
-        athlete({ firstName: ' JANA ', lastName: '  NOVÁKOVÁ  ' }),
-      ]),
-    ).rejects.toMatchObject({ code: '23505' })
-    expect((await db.query('select * from public.registrations')).rows).toHaveLength(1)
     expect(await audit()).toEqual(before)
+    // Registering with CWO takes over the AM ČR-only registration, despite spacing and case.
+    await create({ invoiceNumber: '87654321', accessCode: 'CW-AAAA-AAAC' }, [
+      athlete({ firstName: ' JANA ', lastName: '  NOVÁKOVÁ  ' }),
+    ])
+    await expect(
+      create({ invoiceNumber: '11223344', accessCode: 'CW-AAAA-AAAD' }, [athlete()]),
+    ).rejects.toMatchObject({ code: '23505' })
+    const { rows } = await db.query(
+      'select access_code, status from public.registrations order by access_code',
+    )
+    expect(rows).toEqual([
+      { access_code: 'AM-AAAA-AAAA', status: 'cancelled' },
+      { access_code: 'CW-AAAA-AAAC', status: 'active' },
+    ])
   })
 
   it('handles two simultaneous submissions as one athlete and rolls back the losing registration', async () => {
@@ -290,14 +299,22 @@ describe('identity protection and competition changes', () => {
     expect((await db.query('select * from public.registrations')).rows).toHaveLength(1)
   })
 
-  it('does not merge different people who share a name or email', async () => {
+  it('tells people apart by name and date of birth, not by e-mail', async () => {
     await create({ invoiceNumber: null, accessCode: 'AM-AAAA-AAAA' }, [amOnly()])
+    // Same name, another date of birth: another person.
     await create({ invoiceNumber: null, accessCode: 'AM-AAAA-AAAB' }, [
       athlete({ ...amOnly(), birthDate: '2001-05-01' }),
     ])
+    // Another person sharing the e-mail, e.g. a parent's address.
     await create({ invoiceNumber: null, accessCode: 'AM-AAAA-AAAC' }, [
-      athlete({ ...amOnly(), email: 'other@example.cz' }),
+      athlete({ ...amOnly(), firstName: 'Petra' }),
     ])
+    // The same person under another e-mail is refused.
+    await expect(
+      create({ invoiceNumber: null, accessCode: 'AM-AAAA-AAAD' }, [
+        athlete({ ...amOnly(), email: 'other@example.cz' }),
+      ]),
+    ).rejects.toMatchObject({ code: '23505' })
     expect((await db.query('select * from public.athletes')).rows).toHaveLength(3)
   })
 
@@ -485,8 +502,9 @@ describe('migration rollout and legacy backup compatibility', () => {
       'create role anon; create role authenticated; create role service_role bypassrls;',
     )
     const files = readdirSync(migrationsDir).sort()
+    const changes = files.indexOf('20261030000000_registration_changes.sql')
     const original = files
-      .slice(0, -1)
+      .slice(0, changes)
       .map((file) => readFileSync(join(migrationsDir, file), 'utf8'))
       .join('\n')
       .replace(/^create extension if not exists pg_cron.*$/m, '')
@@ -495,7 +513,7 @@ describe('migration rollout and legacy backup compatibility', () => {
     await create({ invoiceNumber: null, accessCode: 'AM-AAAA-AAAA' }, [amOnly()])
     await create({ invoiceNumber: null, accessCode: 'AM-AAAA-AAAB' }, [amOnly()])
     await expect(
-      db.exec('begin;\n' + readFileSync(join(migrationsDir, files.at(-1)!), 'utf8')),
+      db.exec('begin;\n' + readFileSync(join(migrationsDir, files[changes]!), 'utf8')),
     ).rejects.toThrow('Duplicate active athletes exist')
     await db.exec('rollback')
     expect((await db.query('select * from public.athletes')).rows).toHaveLength(2)
@@ -527,5 +545,297 @@ describe('migration rollout and legacy backup compatibility', () => {
     await expect(
       create({ invoiceNumber: null, accessCode: 'AM-AAAA-AAAC' }, [amOnly()]),
     ).rejects.toMatchObject({ code: '23505' })
+  })
+})
+
+describe('nationality and the weight class overview', () => {
+  const nationality = async () =>
+    (await db.query<{ nationality: string | null }>('select nationality from public.athletes'))
+      .rows[0]!.nationality
+
+  it('stores a three-letter code and leaves registrations from older clients empty', async () => {
+    await create()
+    expect(await nationality()).toBe('CZE')
+    await db.exec('delete from public.registrations')
+    const { nationality: _omitted, ...legacy } = athlete()
+    await create({}, [legacy as ReturnType<typeof athlete>])
+    expect(await nationality()).toBeNull()
+    for (const invalid of ['cze', 'CZ', 'CZEE'])
+      await expect(
+        create({ invoiceNumber: '87654321', accessCode: 'CW-ZZZZ-ZZZZ' }, [
+          athlete({ email: 'other@example.cz', firstName: 'Other', nationality: invalid }),
+        ]),
+      ).rejects.toThrow('athletes_nationality_check')
+  })
+
+  it('publishes the nationality and exports it to organisers', async () => {
+    await create()
+    await db.query('select public.publish_startlist_snapshot()')
+    const { rows } = await db.query<{ data: Record<string, unknown>[] }>(
+      'select data from public.startlist_snapshots',
+    )
+    expect(rows[0]!.data[0]).toMatchObject({ nationality: 'CZE' })
+    const overview = await db.query<Record<string, unknown>>(
+      'select * from public.registrations_overview',
+    )
+    expect(overview.rows[0]).toMatchObject({ nationality: 'CZE', first_name: 'Jana' })
+    expect(overview.fields.map((field) => field.name).slice(7, 11)).toEqual([
+      'birth_date',
+      'sex',
+      'nationality',
+      'weight_class',
+    ])
+  })
+
+  it('restores a nationality change, but keeps a hand-filled one when restoring older history', async () => {
+    await create()
+    await db.exec(`update public.athletes set nationality = 'SVK'`)
+    await db.query('select public.restore_from_audit($1)', [(await audit()).at(-1)!.id])
+    expect(await nationality()).toBe('CZE')
+
+    // History saved before the migration has no nationality key.
+    await db.exec(`update public.athletes set nationality = 'POL'`)
+    await db.exec('update public.athletes set total = 160')
+    const older = (await audit()).at(-1)!.id
+    await db.query(
+      `update public.audit_log set old_data = old_data - 'nationality' where id = $1`,
+      [older],
+    )
+    await db.query('select public.restore_from_audit($1)', [older])
+    const { rows } = await db.query<{ total: number; nationality: string }>(
+      'select total, nationality from public.athletes',
+    )
+    expect(rows[0]).toEqual({ total: 150, nationality: 'POL' })
+  })
+
+  it('counts active athletes per weight class, women first and heavyweights last', async () => {
+    await create({ kind: 'team', teamName: 'Brno' }, [
+      athlete(),
+      athlete({ firstName: 'Petr', sex: 'M', weightClass: '+110', email: 'petr@example.cz' }),
+      athlete({ firstName: 'Pavel', sex: 'M', weightClass: '110', email: 'pavel@example.cz' }),
+    ])
+    await create({ invoiceNumber: null, accessCode: 'AM-ABCD-EFGH' }, [
+      athlete({
+        firstName: 'Eva',
+        email: 'eva@example.cz',
+        cwo: false,
+        amcr: true,
+        university: 'MU',
+        tshirtSize: null,
+      }),
+    ])
+    const cancelled = await create({ invoiceNumber: '87654321', accessCode: 'CW-ZZZZ-ZZZZ' }, [
+      athlete({ firstName: 'Zrušená', email: 'zrusena@example.cz' }),
+    ])
+    await db.query(`update public.registrations set status = 'cancelled' where id = $1`, [
+      cancelled,
+    ])
+    const { rows } = await db.query('select * from public.prehled_vahovek')
+    expect(rows).toEqual([
+      { cislo: 1, pohlavi: 'Ženy', vahovka: '61', celkem: 2, cwo: 1, amcr: 1 },
+      { cislo: 2, pohlavi: 'Muži', vahovka: '110', celkem: 1, cwo: 1, amcr: 0 },
+      { cislo: 3, pohlavi: 'Muži', vahovka: '+110', celkem: 1, cwo: 1, amcr: 0 },
+    ])
+    // The Table Editor sorts by the first column; that must keep the same order.
+    expect((await db.query('select * from public.prehled_vahovek order by 1')).rows).toEqual(rows)
+  })
+
+  it('shows the overview to the API role only', async () => {
+    await create()
+    await db.exec('set role service_role')
+    await db.query('select * from public.prehled_vahovek')
+    await db.exec('reset role; set role anon')
+    await expect(db.query('select * from public.prehled_vahovek')).rejects.toThrow(
+      'permission denied',
+    )
+  })
+})
+
+describe('start list preview for organisers', () => {
+  it('lists each sex by category from the lightest, then by total from the highest', async () => {
+    await create({ kind: 'team', teamName: 'Brno' }, [
+      athlete({ firstName: 'Anna', weightClass: '86', total: 160, email: 'anna@example.cz' }),
+      athlete({ firstName: 'Bára', weightClass: '+86', total: 200, email: 'bara@example.cz' }),
+      athlete({ firstName: 'Cecílie', weightClass: '49', total: 110, email: 'cecilie@example.cz' }),
+      athlete({ firstName: 'Petr', sex: 'M', weightClass: '110', email: 'petr@example.cz' }),
+    ])
+    await create({ invoiceNumber: '87654321', accessCode: 'CW-ZZZZ-ZZZZ' }, [
+      athlete({ firstName: 'Dana', weightClass: '49', total: 130, email: 'dana@example.cz' }),
+      athlete({
+        firstName: 'Ema',
+        weightClass: '86',
+        total: 150,
+        email: 'ema@example.cz',
+        nationality: 'SVK',
+        cwo: false,
+        amcr: true,
+        university: 'MU',
+        tshirtSize: null,
+      }),
+    ])
+    const cancelled = await create({ invoiceNumber: null, accessCode: 'AM-ZZZZ-ZZZZ' }, [
+      athlete({
+        firstName: 'Zrušená',
+        weightClass: '49',
+        total: 300,
+        email: 'z@example.cz',
+        cwo: false,
+        amcr: true,
+        university: 'MU',
+        tshirtSize: null,
+      }),
+    ])
+    await db.query(`update public.registrations set status = 'cancelled' where id = $1`, [
+      cancelled,
+    ])
+
+    // The Table Editor ignores the view's order and sorts by the first column.
+    const women = await db.query<Record<string, unknown>>(
+      'select * from public.startovka_zeny order by 1',
+    )
+    expect(
+      women.rows.map((row) => [row.cislo, row.vahovka, row.poradi_v_kategorii, row.jmeno]),
+    ).toEqual([
+      [1, '49 kg', 1, 'Dana'],
+      [2, '49 kg', 2, 'Cecílie'],
+      [3, '86 kg', 1, 'Anna'],
+      [4, '86 kg', 2, 'Ema'],
+      [5, '+86 kg', 1, 'Bára'],
+    ])
+    expect(women.fields[0]!.name).toBe('cislo')
+    expect(women.rows[3]).toMatchObject({
+      narodnost: 'SVK',
+      rocnik: 2000,
+      dvojboj: 150,
+      soutez: 'AM ČR',
+      tym: null,
+      skola: 'MU',
+    })
+    expect(women.rows[0]).toMatchObject({ soutez: 'CWO', tym: null })
+    expect(women.rows[2]).toMatchObject({ tym: 'Brno' })
+    expect((await db.query('select jmeno from public.startovka_muzi')).rows).toEqual([
+      { jmeno: 'Petr' },
+    ])
+  })
+
+  it('shows the preview to the API role only', async () => {
+    await db.exec('set role service_role')
+    await db.query('select * from public.startovka_zeny, public.startovka_muzi')
+    await db.exec('reset role; set role anon')
+    await expect(db.query('select * from public.startovka_zeny')).rejects.toThrow(
+      'permission denied',
+    )
+    await expect(db.query('select * from public.startovka_muzi')).rejects.toThrow(
+      'permission denied',
+    )
+  })
+})
+
+describe('one person, one registration', () => {
+  const team = (member: ReturnType<typeof athlete>) => [
+    athlete({ firstName: 'Anna', email: 'anna@example.cz' }),
+    athlete({ firstName: 'Bára', email: 'bara@example.cz' }),
+    member,
+  ]
+  const registrations = async () =>
+    (
+      await db.query<{ access_code: string; status: string; note: string | null }>(
+        'select access_code, status, note from public.registrations order by created_at, access_code',
+      )
+    ).rows
+
+  it('moves an AM ČR-only athlete into a CWO team with their school, under another e-mail', async () => {
+    await create({ invoiceNumber: null, accessCode: 'AM-AAAA-AAAA' }, [amOnly()])
+    await create({ kind: 'team', teamName: 'Brno' }, team(athlete({ email: 'captain@example.cz' })))
+
+    const [old, current] = await registrations()
+    expect(old).toMatchObject({ access_code: 'AM-AAAA-AAAA', status: 'cancelled' })
+    expect(old!.note).toContain('Sloučeno do registrace CW-ABCD-EFGH')
+    expect(current).toMatchObject({ access_code: 'CW-ABCD-EFGH', status: 'active' })
+    const { rows } = await db.query(
+      `select first_name, cwo, amcr, university from public.public_startlist where first_name = 'Jana'`,
+    )
+    expect(rows).toEqual([{ first_name: 'Jana', cwo: true, amcr: true, university: 'MU' }])
+    // Undoing the merge would make the person active twice, so it is refused.
+    const cancel = (await audit()).find(
+      (entry) => entry.table_name === 'registrations' && entry.action === 'UPDATE',
+    )!
+    await expect(
+      db.query('select public.restore_from_audit($1)', [cancel.id]),
+    ).rejects.toMatchObject({
+      code: '23505',
+    })
+  })
+
+  it('keeps a school chosen in the new registration', async () => {
+    await create({ invoiceNumber: null, accessCode: 'AM-AAAA-AAAA' }, [amOnly()])
+    await create({}, [athlete({ amcr: true, university: 'ČVUT' })])
+    const { rows } = await db.query('select amcr, university from public.public_startlist')
+    expect(rows).toEqual([{ amcr: true, university: 'ČVUT' }])
+  })
+
+  it('refuses every other second registration and leaves everything unchanged', async () => {
+    await create()
+    const before = await registrations()
+    // Already in CWO: joining a team is a conflict, not a merge.
+    await expect(
+      create(
+        { kind: 'team', teamName: 'Brno', invoiceNumber: '87654321', accessCode: 'CW-ZZZZ-ZZZZ' },
+        team(athlete({ email: 'captain@example.cz' })),
+      ),
+    ).rejects.toMatchObject({ code: '23505' })
+    // AM ČR only, twice.
+    await db.exec('delete from public.registrations')
+    await create({ invoiceNumber: null, accessCode: 'AM-AAAA-AAAA' }, [amOnly()])
+    await expect(
+      create({ invoiceNumber: null, accessCode: 'AM-AAAA-AAAB' }, [
+        athlete({ ...amOnly(), email: 'other@example.cz' }),
+      ]),
+    ).rejects.toMatchObject({ code: '23505' })
+    expect((await registrations()).map((row) => row.status)).toEqual(['active'])
+    expect(before).toHaveLength(1)
+  })
+
+  it('does not take over an AM ČR team member', async () => {
+    await create(
+      { kind: 'team', teamName: 'Brno' },
+      team(athlete({ amcr: true, university: 'MU' })),
+    )
+    await expect(
+      create(
+        { kind: 'team', teamName: 'Praha', invoiceNumber: '87654321', accessCode: 'CW-ZZZZ-ZZZZ' },
+        [
+          athlete({ firstName: 'Cyril', sex: 'M', weightClass: '75', email: 'cyril@example.cz' }),
+          athlete({ firstName: 'Dita', email: 'dita@example.cz' }),
+          athlete({ email: 'another@example.cz' }),
+        ],
+      ),
+    ).rejects.toMatchObject({ code: '23505' })
+    expect((await registrations()).map((row) => row.status)).toEqual(['active'])
+  })
+
+  it('refuses to install while one person is active twice, without merging anyone', async () => {
+    await db.close()
+    db = new PGlite()
+    await db.exec(
+      'create role anon; create role authenticated; create role service_role bypassrls;',
+    )
+    const files = readdirSync(migrationsDir).sort()
+    const merge = files.indexOf('20261116150000_identity_merge.sql')
+    await db.exec(
+      files
+        .slice(0, merge)
+        .map((file) => readFileSync(join(migrationsDir, file), 'utf8'))
+        .join('\n')
+        .replace(/^create extension if not exists pg_cron.*$/m, '')
+        .replace(/^select cron\.schedule\([\s\S]*?\);$/m, ''),
+    )
+    await create({ invoiceNumber: null, accessCode: 'AM-AAAA-AAAA' }, [amOnly()])
+    await create({ kind: 'team', teamName: 'Brno' }, team(athlete({ email: 'captain@example.cz' })))
+    await expect(
+      db.exec('begin;\n' + readFileSync(join(migrationsDir, files[merge]!), 'utf8')),
+    ).rejects.toThrow('Duplicate active athletes (same name and date of birth) exist')
+    await db.exec('rollback')
+    expect((await registrations()).map((row) => row.status)).toEqual(['active', 'active'])
   })
 })

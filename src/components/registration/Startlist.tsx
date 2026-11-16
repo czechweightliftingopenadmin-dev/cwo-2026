@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { bodyweightCategories } from '../../config/competition'
 import { sectionNumber } from '../../config/features'
 import { fetchStartlist } from '../../lib/registration/api'
-import { formatDateTime, kg } from '../../lib/registration/format'
+import { countryName, formatDateTime, kg } from '../../lib/registration/format'
 import type { Startlist as StartlistData, StartlistEntry } from '../../lib/registration/types'
 
 // The structure of earlier start lists: women and men by category, CWO and AM ČR together
@@ -145,6 +145,7 @@ export function Startlist() {
                       <thead>
                         <tr>
                           <th scope="col">{t('startlist.name')}</th>
+                          <th scope="col">{t('startlist.nationality')}</th>
                           {isTeams && <th scope="col">{t('startlist.weightClass')}</th>}
                           <th scope="col" className="numeric">
                             {t('startlist.total')}
@@ -171,6 +172,15 @@ export function Startlist() {
                                 <span className="startlist-team">{entry.teamName}</span>
                               )}
                             </th>
+                            <td>
+                              {entry.nationality ? (
+                                <abbr title={countryName(entry.nationality, i18n.language)}>
+                                  {entry.nationality}
+                                </abbr>
+                              ) : (
+                                '—'
+                              )}
+                            </td>
                             {isTeams && <td>{kg(entry.weightClass)}</td>}
                             <td className="numeric">{kg(entry.total)}</td>
                             {!isTeams && (

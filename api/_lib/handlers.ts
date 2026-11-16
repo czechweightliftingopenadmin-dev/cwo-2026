@@ -95,7 +95,15 @@ export const createRegistration = guard(async (request, deps) => {
       if (result.conflict === 'duplicateAthlete') return apiError('alreadyRegistered')
       continue
     }
-    const emailSent = await sendAndLog(deps, registrationEmail(registration, accessCode), {
+    // Confirm what was saved: a taken-over AM ČR registration adds AM ČR and the school.
+    const saved = {
+      ...registration,
+      athletes: registration.athletes.map((athlete, index) => ({
+        ...athlete,
+        ...result.competitions?.[index],
+      })),
+    }
+    const emailSent = await sendAndLog(deps, registrationEmail(saved, accessCode), {
       registrationId: result.id,
       kind: 'registration',
     })

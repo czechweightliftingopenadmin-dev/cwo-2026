@@ -1,12 +1,14 @@
 import { useTranslation } from 'react-i18next'
-import { tshirtSizes, universities } from '../../config/registration'
+import { tshirtSizes } from '../../config/registration'
 import { weightClassesFor } from '../../lib/registration/schema'
 import type { Sex } from '../../lib/registration/schema'
 import { kg } from '../../lib/registration/format'
 import { BirthDateField } from './BirthDateField'
+import { CountrySelect } from './CountrySelect'
 import type { AthleteDraft } from './draft'
 import { Choice, Field, FieldError, fieldId } from './fields'
 import type { Errors } from './fields'
+import { SchoolSelect } from './SchoolSelect'
 import { Select } from './Select'
 
 interface Props {
@@ -74,6 +76,19 @@ export function AthleteFields({ index, title, athlete, isTeam, errors, onChange 
               autoComplete={autoComplete('bday')}
               value={athlete.birthDate}
               onChange={(birthDate) => onChange({ birthDate })}
+            />
+          )}
+        </Field>
+        <Field
+          path={path('nationality')}
+          label={t('registration.nationality')}
+          error={error('nationality')}
+        >
+          {(props) => (
+            <CountrySelect
+              {...props}
+              value={athlete.nationality}
+              onChange={(nationality) => onChange({ nationality })}
             />
           )}
         </Field>
@@ -170,11 +185,9 @@ export function AthleteFields({ index, title, athlete, isTeam, errors, onChange 
           error={error('university')}
         >
           {(props) => (
-            <Select
+            <SchoolSelect
               {...props}
               value={athlete.university}
-              placeholder={t('registration.choose')}
-              options={universities.map(({ code, name }) => ({ value: code, label: name }))}
               onChange={(university) => onChange({ university })}
             />
           )}

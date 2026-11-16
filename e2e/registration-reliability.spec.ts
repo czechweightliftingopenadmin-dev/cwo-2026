@@ -56,7 +56,7 @@ test('an open university picker allows scrolling the page and still accepts a ch
 }) => {
   await page.goto('/#registration')
   await page.getByRole('checkbox', { name: 'Akademické mistrovství ČR', exact: true }).check()
-  const university = page.getByLabel('Vysoká škola', { exact: true })
+  const university = page.getByLabel('Vysoká nebo vyšší odborná škola', { exact: true })
   await university.click()
   await expect(page.getByRole('listbox')).toBeVisible()
   const before = await page.evaluate(() => scrollY)
@@ -83,12 +83,34 @@ test('an open university picker allows scrolling the page and still accepts a ch
   }
   await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(before + 80)
   await expect(page.getByRole('listbox')).toBeVisible()
-  await page.getByRole('option', { name: 'Masarykova univerzita', exact: true }).click()
-  await expect(university).toContainText('Masarykova univerzita')
+  await page.getByRole('option', { name: 'Masarykova univerzita, Brno', exact: true }).click()
+  await expect(university).toHaveValue('Masarykova univerzita')
   await university.click()
   await page.keyboard.press('Escape')
   await expect(page.getByRole('listbox')).toHaveCount(0)
   await expect(university).toBeFocused()
+})
+
+test('the school picker finds universities and VOŠ by name or city with or without diacritics', async ({
+  page,
+}) => {
+  await page.goto('/#registration')
+  await page.getByRole('checkbox', { name: 'Akademické mistrovství ČR', exact: true }).check()
+  const school = page.getByLabel('Vysoká nebo vyšší odborná škola', { exact: true })
+  for (const query of ['Zdravotnická Plzeň', 'ČVUT', 'Ústí nad Labem']) {
+    await school.fill(query)
+    await expect(page.getByRole('option').first()).toBeVisible()
+  }
+  await school.fill('zdravotnicka plzen')
+  await expect(page.getByRole('option')).toHaveCount(2)
+  await school.fill('Zdravotnická Plzeň')
+  await expect(page.getByRole('option')).toHaveCount(2)
+  await page.getByRole('option', { name: /Karlovarská 99/ }).click()
+  await expect(school).toHaveValue(/Vyšší odborná škola zdravotnická, Plzeň/)
+  await school.fill('xyz neexistuje')
+  await expect(page.getByText('Žádná škola neodpovídá hledání.')).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(school).toHaveValue(/Vyšší odborná škola zdravotnická, Plzeň/)
 })
 
 test('AM CR gains CWO without losing entered data after server, network or validation errors', async ({
@@ -161,8 +183,10 @@ for (const identifier of ['12345678', 'CW-ABCD-EFGH'])
     ).toBeDisabled()
     await section.getByRole('checkbox', { name: 'Akademické mistrovství ČR', exact: true }).check()
     await section.getByRole('button', { name: 'Uložit změny' }).click()
-    await expect(section.getByLabel('Vysoká škola', { exact: true })).toBeFocused()
-    await choose(page, 'Vysoká škola', 'Masarykova univerzita')
+    await expect(
+      section.getByLabel('Vysoká nebo vyšší odborná škola', { exact: true }),
+    ).toBeFocused()
+    await choose(page, 'Vysoká nebo vyšší odborná škola', 'Masarykova univerzita, Brno')
     await section.getByRole('button', { name: 'Uložit změny' }).click()
     await expect(section.getByRole('heading', { name: 'Změny jsou uložené' })).toBeVisible()
     expect(body).toMatchObject({
@@ -190,11 +214,12 @@ test('a failed new AM CR registration keeps its draft and shows a usable duplica
   await section.getByLabel('Jméno', { exact: true }).fill('Jana')
   await section.getByLabel('Příjmení', { exact: true }).fill('Nováková')
   await section.getByLabel('Datum narození', { exact: true }).fill('1.5.2000')
+  await choose(page, 'Národnost', 'Česko (CZE)')
   await choose(page, 'Hmotnostní kategorie', '61 kg')
   await section.getByLabel('Dvojboj (kg)', { exact: true }).fill('150')
   await section.getByLabel('E-mail', { exact: true }).fill('jana@example.cz')
   await section.getByLabel('Telefon', { exact: true }).fill('777123456')
-  await choose(page, 'Vysoká škola', 'Masarykova univerzita')
+  await choose(page, 'Vysoká nebo vyšší odborná škola', 'Masarykova univerzita, Brno')
   await section.getByText('Souhlasím se zpracováním').click()
   await section.getByRole('button', { name: 'Pokračovat ke kontrole' }).click()
   await section.getByRole('button', { name: 'Odeslat registraci', exact: true }).click()
@@ -202,7 +227,7 @@ test('a failed new AM CR registration keeps its draft and shows a usable duplica
   await section.getByRole('button', { name: 'Upravit údaje', exact: true }).click()
   await expect(section.getByLabel('Jméno', { exact: true })).toHaveValue('Jana')
   await expect(section.getByLabel('Dvojboj (kg)', { exact: true })).toHaveValue('150')
-  await expect(section.getByLabel('Vysoká škola', { exact: true })).toContainText(
+  await expect(section.getByLabel('Vysoká nebo vyšší odborná škola', { exact: true })).toHaveValue(
     'Masarykova univerzita',
   )
   await section.getByRole('button', { name: 'Pokračovat ke kontrole' }).click()

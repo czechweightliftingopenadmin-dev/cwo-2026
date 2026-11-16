@@ -6,6 +6,7 @@ export interface AthleteDraft {
   lastName: string
   birthDate: string
   sex: Sex
+  nationality: string
   weightClass: string
   total: string
   email: string
@@ -31,6 +32,7 @@ export const emptyAthlete = (cwo = true): AthleteDraft => ({
   lastName: '',
   birthDate: '',
   sex: 'F',
+  nationality: '',
   weightClass: '',
   total: '',
   email: '',
@@ -101,6 +103,7 @@ export function toInput(draft: Draft, language: string) {
       ...athlete,
       birthDate: normaliseBirthDate(athlete.birthDate),
       total: athlete.total.trim() === '' ? undefined : Number(athlete.total),
+      nationality: athlete.nationality || null,
       tshirtSize: athlete.tshirtSize || null,
       university: athlete.university || null,
     })),
@@ -115,7 +118,14 @@ const storageKey = 'cwo:registration-draft'
 export function loadDraft(): Draft {
   try {
     const stored = sessionStorage.getItem(storageKey)
-    if (stored) return { ...emptyDraft(), ...(JSON.parse(stored) as Partial<Draft>), website: '' }
+    if (stored) {
+      const draft = { ...emptyDraft(), ...(JSON.parse(stored) as Partial<Draft>), website: '' }
+      // A draft saved by an older version of the page lacks newer fields, e.g. nationality.
+      return {
+        ...draft,
+        athletes: draft.athletes.map((athlete) => ({ ...emptyAthlete(), ...athlete })),
+      }
+    }
   } catch {
     // Storage can be unavailable; start empty.
   }

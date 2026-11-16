@@ -1,3 +1,5 @@
+import { countries } from '../../config/countries.js'
+
 const timeZone = 'Europe/Prague'
 
 export const locale = (language: string) => (language === 'en' ? 'en-GB' : 'cs-CZ')
@@ -43,3 +45,21 @@ export function formatPrice(amount: number, language: string): string {
 }
 
 export const kg = (value: string | number) => `${value} kg`
+
+const regionNames = new Map<string, Intl.DisplayNames>()
+
+/** "Česko" / "Czechia" for "CZE"; the code itself if it is unknown. */
+export function countryName(code: string, language: string): string {
+  try {
+    const tag = locale(language)
+    let names = regionNames.get(tag)
+    if (!names) {
+      names = new Intl.DisplayNames([tag], { type: 'region' })
+      regionNames.set(tag, names)
+    }
+    const region = (countries as Record<string, string>)[code]
+    return region ? (names.of(region) ?? code) : code
+  } catch {
+    return code
+  }
+}

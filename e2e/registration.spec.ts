@@ -141,6 +141,8 @@ test('an individual registers after fixing errors and reviewing the data', async
   await form.getByLabel('Příjmení').fill('Nováková')
   await form.getByLabel('Datum narození').pressSequentially('01052000')
   await expect(form.getByLabel('Datum narození')).toHaveValue('01. 05. 2000')
+  await choose(form.getByLabel('Národnost', { exact: true }), 'Česko (CZE)')
+  await expect(form.getByLabel('Národnost', { exact: true })).toHaveValue('Česko (CZE)')
   await choose(form.getByLabel('Hmotnostní kategorie'), '61 kg')
   await form.getByLabel('Dvojboj (kg)').fill('150')
   await form.getByLabel('E-mail').fill('Jana@Example.cz')
@@ -153,12 +155,18 @@ test('an individual registers after fixing errors and reviewing the data', async
   await expectStepInPlace(page)
   await expect(form).toContainText('12345678')
   await expect(form).toContainText('jana@example.cz')
+  await expect(form).toContainText('Česko (CZE)')
   await form.getByRole('button', { name: 'Odeslat registraci' }).click()
 
   await expect(form.getByRole('heading', { name: 'Registrace je hotová' })).toBeVisible()
   await expectStepInPlace(page)
   await expect(form).toContainText('CW-ABCD-EFGH')
-  expect(sent).toMatchObject({ kind: 'individual', invoiceNumber: '12345678', website: '' })
+  expect(sent).toMatchObject({
+    kind: 'individual',
+    invoiceNumber: '12345678',
+    website: '',
+    athletes: [{ nationality: 'CZE' }],
+  })
 
   // The draft is cleared after a successful registration.
   await page.reload()
@@ -192,6 +200,12 @@ test('a team keeps the typed data, takes a 4th member and sees a taken invoice',
     await card.getByLabel('Jméno', { exact: true }).fill(name)
     await card.getByLabel('Příjmení').fill('Testová')
     await card.getByLabel('Datum narození').fill('1.1.1999')
+    // Searching works in Czech and English, without diacritics.
+    const nationality = card.getByLabel('Národnost', { exact: true })
+    await nationality.fill(index === 1 ? 'slovak' : 'cesko')
+    await page
+      .getByRole('option', { name: index === 1 ? 'Slovensko (SVK)' : 'Česko (CZE)', exact: true })
+      .click()
     await choose(card.getByLabel('Hmotnostní kategorie'), `${weightClass} kg`)
     await card.getByLabel('Dvojboj (kg)').fill('180')
     await card.getByLabel('E-mail').fill(`${name.toLowerCase()}@example.cz`)
@@ -227,7 +241,7 @@ test('an AM ČR athlete registers without an invoice', async ({ page }) => {
   await form.getByText('Akademické mistrovství ČR').click()
   await expect(form.getByLabel('Číslo faktury')).toHaveCount(0)
   await expect(form.getByLabel('Velikost trička (unisex)')).toHaveCount(0)
-  await expect(form.getByLabel('Vysoká škola')).toBeVisible()
+  await expect(form.getByLabel('Vysoká nebo vyšší odborná škola')).toBeVisible()
 })
 
 test('results change from 7 December with the invoice and e-mail', async ({ page }) => {
@@ -289,6 +303,7 @@ test('the start list shows the latest snapshot by category', async ({ page }) =>
   const entry = {
     kind: 'individual',
     teamName: null,
+    nationality: 'CZE',
     cwo: true,
     amcr: false,
     university: null,
@@ -306,7 +321,15 @@ test('the start list shows the latest snapshot by category', async ({ page }) =>
           weightClass: '61',
           total: 150,
         },
-        { ...entry, firstName: 'Eva', lastName: 'Malá', sex: 'F', weightClass: '49', total: 120 },
+        {
+          ...entry,
+          firstName: 'Eva',
+          lastName: 'Malá',
+          sex: 'F',
+          nationality: null,
+          weightClass: '49',
+          total: 120,
+        },
         { ...entry, firstName: 'Petr', lastName: 'Novák', sex: 'M', weightClass: '75', total: 250 },
         {
           ...entry,
@@ -327,6 +350,15 @@ test('the start list shows the latest snapshot by category', async ({ page }) =>
   await expect(list.getByText('Finální')).toBeVisible()
   await expect(list).toContainText('Aktualizováno 16. 12. 2026 23:59')
   await expect(list.locator('.startlist-group h3')).toHaveText([/Ženy 49 kg/, /Ženy 61 kg/])
+  // Nationality as a three-letter code; older registrations not yet filled in show a dash.
+  await expect(list.getByRole('row', { name: /Jana Nováková/ })).toContainText('CZE')
+  await expect(list.getByTitle('Česko').first()).toBeVisible()
+  await expect(
+    list
+      .getByRole('row', { name: /Eva Malá/ })
+      .getByRole('cell')
+      .first(),
+  ).toHaveText('—')
   // Team members also lift in their own category, with the team under the name.
   await list.getByRole('button', { name: 'Muži' }).click()
   await expect(list.locator('.startlist-group h3')).toHaveText([/Muži 75 kg/, /Muži 95 kg/])

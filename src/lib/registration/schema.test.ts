@@ -7,6 +7,7 @@ const athlete = (overrides: Partial<AthleteInput> = {}): AthleteInput => ({
   lastName: 'Nováková',
   birthDate: '2000-05-01',
   sex: 'F',
+  nationality: 'CZE',
   weightClass: '61',
   total: 150,
   email: ' Jana@Example.CZ ',
@@ -70,6 +71,14 @@ describe('registrationSchema', () => {
     const issues = messages(individual({ athletes: [athlete({ amcr: true, tshirtSize: null })] }))
     expect(issues).toContainEqual({ path: 'athletes.0.university', message: 'required' })
     expect(issues).toContainEqual({ path: 'athletes.0.tshirtSize', message: 'required' })
+  })
+
+  it('requires a nationality from the country list', () => {
+    for (const nationality of [null, '', 'cze', 'CZ', 'GER', 'XXX', 'CXR'])
+      expect(
+        messages(individual({ athletes: [athlete({ nationality } as unknown as AthleteInput)] })),
+      ).toContainEqual({ path: 'athletes.0.nationality', message: 'required' })
+    expect(messages(individual({ athletes: [athlete({ nationality: 'SVK' })] }))).toEqual([])
   })
 
   it('checks the weight class against the sex', () => {

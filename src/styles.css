@@ -1325,6 +1325,46 @@ main:focus {
   opacity: 0.4;
   cursor: default;
 }
+.combobox-input {
+  padding-right: 38px;
+  cursor: text;
+  text-overflow: ellipsis;
+}
+.combobox-toggle {
+  position: absolute;
+  inset: 0 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+.combobox-toggle[data-open] > svg {
+  transform: rotate(180deg);
+}
+.combobox-options {
+  width: var(--input-width);
+}
+.select-group {
+  padding: 10px 10px 4px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.select-option-detail {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 400;
+}
+.select-empty {
+  padding: 8px 10px;
+  color: var(--muted);
+}
 .date-field {
   position: relative;
 }

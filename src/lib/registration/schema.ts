@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { bodyweightCategories } from '../../config/competition.js'
+import { countryCodes } from '../../config/countries.js'
 import {
   invoicePattern,
   minimumMenAge,
@@ -35,6 +36,7 @@ export const athleteSchema = z
     lastName: text(60),
     birthDate: z.string().min(1, 'required').pipe(z.iso.date('invalidDate')),
     sex: z.enum(['M', 'F'], 'required'),
+    nationality: z.enum(countryCodes, 'required'),
     weightClass: z.string(),
     total: totalSchema,
     email: emailSchema,

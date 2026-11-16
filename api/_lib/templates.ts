@@ -1,6 +1,7 @@
 import { event } from '../../src/config/event.js'
 import { registrationWindows, universities } from '../../src/config/registration.js'
 import { formatEventDates } from '../../src/lib/countdown.js'
+import { countryName } from '../../src/lib/registration/format.js'
 import type { Registration } from '../../src/lib/registration/schema.js'
 import type { EmailMessage } from './mailer.js'
 import type { AthleteChange, StoredRegistration } from './store.js'
@@ -34,6 +35,7 @@ const copy = {
     name: 'Jméno',
     birthDate: 'Datum narození',
     sex: 'Pohlaví',
+    nationality: 'Národnost',
     M: 'Muž',
     F: 'Žena',
     weightClass: 'Hmotnostní kategorie',
@@ -71,6 +73,7 @@ const copy = {
     name: 'Name',
     birthDate: 'Date of birth',
     sex: 'Sex',
+    nationality: 'Nationality',
     M: 'Male',
     F: 'Female',
     weightClass: 'Bodyweight category',
@@ -328,6 +331,7 @@ export function registrationEmail(registration: Registration, accessCode: string
     const rows: Rows = [
       [t.birthDate, formatDate(athlete.birthDate, language)],
       [t.sex, t[athlete.sex]],
+      [t.nationality, `${countryName(athlete.nationality, language)} (${athlete.nationality})`],
       [t.weightClass, kg(athlete.weightClass)],
       [t.total, kg(String(athlete.total))],
       [t.email, athlete.email],

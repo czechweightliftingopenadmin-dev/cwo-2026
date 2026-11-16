@@ -118,6 +118,7 @@ const registration: RegistrationInput = {
       lastName: 'Nováková',
       birthDate: '2000-05-01',
       sex: 'F',
+      nationality: 'CZE',
       weightClass: '61',
       total: 150,
       email: 'jana@example.cz',
@@ -143,7 +144,23 @@ describe('createRegistration', () => {
     expect(message.to).toEqual(['jana@example.cz'])
     expect(message.text).toContain('12345678')
     expect(message.text).toContain('61 kg')
+    expect(message.text).toContain('Národnost')
+    expect(message.text).toContain('Česko (CZE)')
     expect(store.logEmail).toHaveBeenCalledWith(expect.objectContaining({ status: 'sent' }))
+  })
+
+  it('confirms AM ČR carried over from a taken-over registration', async () => {
+    const { deps, send } = setup(duringRegistration, {
+      createRegistration: vi.fn(async () => ({
+        id: 'reg-1',
+        competitions: [{ amcr: true, university: 'MU' }],
+      })),
+    })
+    const response = await createRegistration(post(registration), deps)
+    expect(response.status).toBe(201)
+    const message = send.mock.calls[0]![0]
+    expect(message.text).toContain('CWO + AM ČR')
+    expect(message.text).toContain('Masarykova univerzita')
   })
 
   it('keeps the registration when the e-mail fails', async () => {

@@ -32,7 +32,13 @@ export interface StoredRegistration {
 }
 
 export type CreateResult =
-  { id: string } | { conflict: 'invoiceFull' | 'duplicateAthlete' | 'accessCode' }
+  | {
+      id: string
+      /** Saved competitions in athlete order. The database may add AM ČR when the athlete's own
+       *  AM ČR-only registration was taken over, so they can differ from the request. */
+      competitions?: { amcr: boolean; university: string | null }[]
+    }
+  | { conflict: 'invoiceFull' | 'duplicateAthlete' | 'accessCode' }
 
 export interface AthleteChange {
   before: StoredAthlete
@@ -100,7 +106,18 @@ export function createSupabaseStore(): Store {
           return { conflict: 'accessCode' }
       }
       if (error) throw error
-      return { id: data as string }
+      const id = data as string
+      const saved = await db
+        .from('athletes')
+        .select('amcr, university')
+        .eq('registration_id', id)
+        .order('position')
+      // The registration is saved; the e-mail can fall back to the submitted competitions.
+      if (saved.error) console.error('reading saved competitions failed', saved.error)
+      return {
+        id,
+        competitions: saved.data as { amcr: boolean; university: string | null }[] | undefined,
+      }
     },
 
     async findRegistrations(identifier, email) {
@@ -168,8 +185,12 @@ export function createSupabaseStore(): Store {
         publishedAt: data.published_at as string,
         isFinal: data.is_final as boolean,
         // Snapshots also hold the birth year; the public start list leaves it out.
+        // Snapshots from before 16 November 2026 have no nationality.
         entries: (data.data as (StartlistEntry & { birthYear?: number })[]).map(
-          ({ birthYear: _birthYear, ...entry }) => entry,
+          ({ birthYear: _birthYear, ...entry }) => ({
+            ...entry,
+            nationality: entry.nationality ?? null,
+          }),
         ),
       }
     },

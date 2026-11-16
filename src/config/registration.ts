@@ -53,33 +53,4 @@ export const tshirtSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'] as const
 /** Men must turn 15 in the calendar year of the competition. */
 export const minimumMenAge = { years: 15, competitionYear: 2026 } as const
 
-export const universities = [
-  { code: 'AMU', name: 'Akademie múzických umění v Praze' },
-  { code: 'AVU', name: 'Akademie výtvarných umění v Praze' },
-  { code: 'ČVUT', name: 'České vysoké učení technické v Praze' },
-  { code: 'ČZU', name: 'Česká zemědělská univerzita v Praze' },
-  { code: 'JAMU', name: 'Janáčkova akademie múzických umění' },
-  { code: 'JU', name: 'Jihočeská univerzita v Českých Budějovicích' },
-  { code: 'MENDELU', name: 'Mendelova univerzita v Brně' },
-  { code: 'MU', name: 'Masarykova univerzita' },
-  { code: 'OSU', name: 'Ostravská univerzita' },
-  { code: 'SU', name: 'Slezská univerzita v Opavě' },
-  { code: 'TUL', name: 'Technická univerzita v Liberci' },
-  { code: 'UHK', name: 'Univerzita Hradec Králové' },
-  { code: 'UJEP', name: 'Univerzita Jana Evangelisty Purkyně v Ústí nad Labem' },
-  { code: 'UK', name: 'Univerzita Karlova' },
-  { code: 'UMPRUM', name: 'Vysoká škola uměleckoprůmyslová v Praze' },
-  { code: 'UNOB', name: 'Univerzita obrany' },
-  { code: 'UP', name: 'Univerzita Palackého v Olomouci' },
-  { code: 'UPCE', name: 'Univerzita Pardubice' },
-  { code: 'UTB', name: 'Univerzita Tomáše Bati ve Zlíně' },
-  { code: 'VETUNI', name: 'Veterinární univerzita Brno' },
-  { code: 'VŠB-TUO', name: 'Vysoká škola báňská – Technická univerzita Ostrava' },
-  { code: 'VŠCHT', name: 'Vysoká škola chemicko-technologická v Praze' },
-  { code: 'VŠE', name: 'Vysoká škola ekonomická v Praze' },
-  { code: 'VŠPJ', name: 'Vysoká škola polytechnická Jihlava' },
-  { code: 'VŠTE', name: 'Vysoká škola technická a ekonomická v Českých Budějovicích' },
-  { code: 'VŠTVS Palestra', name: 'Vysoká škola tělesné výchovy a sportu Palestra' },
-  { code: 'VUT', name: 'Vysoké učení technické v Brně' },
-  { code: 'ZČU', name: 'Západočeská univerzita v Plzni' },
-] as const
+export { universities } from './schools.js'

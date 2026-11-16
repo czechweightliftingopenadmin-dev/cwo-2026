@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import type { CSSProperties, FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
-import { registrationWindows, tshirtSizes, universities } from '../../config/registration'
+import { registrationWindows, tshirtSizes } from '../../config/registration'
 import { lookupRegistration, updateRegistration } from '../../lib/registration/api'
 import type { ClientErrorCode } from '../../lib/registration/api'
 import { formatDay, kg } from '../../lib/registration/format'
@@ -18,6 +18,7 @@ import type {
 } from '../../lib/registration/types'
 import { Field, focusFirstError, toErrors, useErrorText, useRevealOnChange } from './fields'
 import type { Errors } from './fields'
+import { SchoolSelect } from './SchoolSelect'
 import { Select } from './Select'
 
 interface AthleteValues {
@@ -302,14 +303,9 @@ export function EditRegistration() {
                           error={errors[universityPath]}
                         >
                           {(props) => (
-                            <Select
+                            <SchoolSelect
                               {...props}
                               value={value.university}
-                              placeholder={t('registration.choose')}
-                              options={universities.map((university) => ({
-                                value: university.code,
-                                label: university.name,
-                              }))}
                               onChange={(university) => changeValue(athlete.id, { university })}
                             />
                           )}

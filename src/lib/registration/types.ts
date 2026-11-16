@@ -61,6 +61,8 @@ export interface StartlistEntry {
   firstName: string
   lastName: string
   sex: Sex
+  /** Null for athletes registered before nationality was asked and not yet filled in. */
+  nationality: string | null
   weightClass: string
   total: number
   cwo: boolean

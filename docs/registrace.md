@@ -175,6 +175,8 @@ Na dev adrese (větev `dev`, databáze `cwo-dev`, všechny přepínače zapnuté
 ### Kde jsou data
 
 - **Table Editor → `registrations_overview`**: všechno v jedné tabulce, jeden řádek na závodníka. **Export → CSV** se otevře v Excelu i Google Sheets.
+- **Table Editor → `prehled_vahovek`**: kolik lidí je aktuálně přihlášených v každé váhovce (celkem, z toho CWO a AM ČR), ještě před zveřejněním startovky. Jde jen číst, nic se v něm nedá pokazit. Členové týmů se počítají ve svých váhovkách stejně jako na startovce. Váhovka bez přihlášených v přehledu chybí.
+- **Table Editor → `startovka_zeny` a `startovka_muzi`**: živý náhled startovky pro organizátory, ještě před zveřejněním. Kategorie jdou od nejlehčí po nejtěžší, v rámci kategorie podle dvojboje od nejvyššího. Sloupec `poradi_v_kategorii` čísluje závodníky v kategorii. První sloupec `cislo` drží správné pořadí: Table Editor řadí podle prvního sloupce, takže když si tabulku přeřadíš podle něčeho jiného, klikni na `cislo` a pořadí se vrátí. Obsahuje i ročník, národnost, soutěž, tým a školu. Jde jen číst; **Export → CSV** se otevře v Excelu.
 - `registrations`: jedna registrace (jednotlivec nebo tým), faktura, kód, stav a interní poznámka `note`.
 - `athletes`: závodníci.
 - `email_log`: odeslané a neodeslané e-maily.
@@ -184,6 +186,7 @@ Na dev adrese (větev `dev`, databáze `cwo-dev`, všechny přepínače zapnuté
 Závodník použije záložku **Změna registrace**, fakturu nebo původní kód a svůj e-mail. Všichni nalezení členové týmu se zobrazí samostatně. Už přidané soutěže se nedají odškrtnout; před uložením je možné nově vybranou soutěž zase odškrtnout. Faktura se zadává jen při přidání CWO k původní registraci bez CWO. Už uložená faktura se tímto formulářem nepřepisuje.
 
 - **Oprava údajů** (jméno, e-mail, výměna člena týmu): uprav řádek v `athletes` v Table Editoru. Změna se zapíše do `audit_log` se zdrojem `dashboard`.
+- **Doplnění národnosti**: registrace z doby před 16. 11. 2026 ji nemají. V `athletes` vyplň sloupec `nationality` třípísmenným kódem velkými písmeny podle ISO 3166-1 alpha-3: `CZE`, `SVK`, `POL`, `AUT`, `DEU` (ne GER), `UKR`… Jiný formát databáze nepřijme. Na webu se změna ukáže s dalším snímkem startovky. Seznam zemí ve formuláři je v [src/config/countries.ts](../src/config/countries.ts).
 - **Zrušení registrace**: v `registrations` nastav `status` na `cancelled`. **Nemaž řádky.** Zrušená registrace zmizí ze startovky a uvolní svá místa na faktuře.
 - **Nový e-mail s potvrzením** (po neúspěšném odeslání nebo po opravě): `npm run email:resend -- 12345678`, případně s kódem `AM-ABCD-EFGH`. Potřebuje `.env.local` s produkčními klíči.
 - **Neodeslané e-maily**: `select * from email_log where status = 'failed' order by created_at desc;`
@@ -239,7 +242,7 @@ V [src/config/features.ts](../src/config/features.ts) nastav v configu `producti
 
 - Změna registrace vyžaduje číslo faktury nebo kód registrace **a** e-mail některého závodníka v registraci. Při neúspěchu server neprozradí, která z těch dvou věcí nesedí. Pokusy jsou omezené na 10 za 15 minut z jedné adresy.
 - O každé změně přijde e-mail všem závodníkům v registraci.
-- Startovka obsahuje jen jméno, pohlaví, kategorii, dvojboj, tým, školu a soutěž. Kontakty ani datum či rok narození nezveřejňuje (snímek v databázi rok narození má, API ho vynechává).
+- Startovka obsahuje jen jméno, národnost, pohlaví, kategorii, dvojboj, tým, školu a soutěž. Kontakty ani datum či rok narození nezveřejňuje (snímek v databázi rok narození má, API ho vynechává).
 - Skryté pole formuláře zachytí jednoduché boty. Server jim odpoví jako úspěch, ale nic neuloží.
 
 ## Nasazení změn registrací a ochrany duplicit
@@ -249,5 +252,21 @@ V [src/config/features.ts](../src/config/features.ts) nastav v configu `producti
 3. Pokud migrace ohlásí `Duplicate active athletes exist`, zastaví se. Projdi shodné jméno, příjmení, datum narození a e-mail v `registrations_overview`; ověř, která registrace má zůstat aktivní. Nic automaticky nemaž ani neslučuj. U týmu nepozastavuj celou registraci bez kontroly ostatních členů. Po ručním vyřešení migraci zopakuj.
 4. Vyzkoušej AM ČR → CWO, CWO → AM ČR, kód i fakturu s e-mailem, chybné přihlášení, plnou fakturu a opakované odeslání. Ověř, že zůstává stejný identifikátor závodníka a jeden řádek ve startovce. Změny se ve veřejné startovce objeví až v dalším snímku.
 5. Ověř zálohu a obnovu. Nový sloupec `athletes.registration_active` je odvozený z `registrations.status`: ručně ho neměň. Triggery jej udržují i při změně stavu v dashboardu a obnově z auditu. Aktualizovaný `restore.sh` jej po načtení zálohy přepočítá v rámci téže transakce; funguje i se staršími zálohami bez tohoto sloupce. Obnova s konfliktními aktivními identitami bezpečně selže a vrátí celou transakci.
+
+## Nasazení národnosti a přehledu váhovek
+
+Migrace [20261116000000_nationality.sql](../supabase/migrations/20261116000000_nationality.sql) přidá sloupec `athletes.nationality` a view `prehled_vahovek`. Migrace [20261116120000_startlist_preview.sql](../supabase/migrations/20261116120000_startlist_preview.sql) přidá view `startovka_zeny` a `startovka_muzi`. Další dvě migrace řazení upravují ([20261116130000_sortable_previews.sql](../supabase/migrations/20261116130000_sortable_previews.sql), [20261116140000_rename_category_rank.sql](../supabase/migrations/20261116140000_rename_category_rank.sql)) a [20261116150000_identity_merge.sql](../supabase/migrations/20261116150000_identity_merge.sql) mění pravidlo jednoho člověka (viz níže). Všechny už běží na `cwo-dev` i `cwo-prod` (16. 11. 2026) a jsou zapsané v evidenci migrací Supabase CLI. Jsou zpětně kompatibilní: sloupec je nepovinný, takže starší API i stávající registrace fungují dál. Workflow je automaticky nezavádí.
+
+1. Spusť celý obsah migrace v **SQL Editoru** nejdřív v `cwo-dev`, potom v `cwo-prod`.
+2. Až potom nasaď web a API, nejdřív na dev a pak merge do `main`. V opačném pořadí by se registrace uložily, ale národnost by se tiše zahodila, protože stará funkce `create_registration` ji nezná.
+3. Kontrola: `select * from prehled_vahovek;` vrátí počty a nová registrace na devu má vyplněné `nationality`.
+
+### Jeden člověk, jedna registrace
+
+Stejný člověk = stejné jméno, příjmení a datum narození. Mezery a velikost písmen nehrají roli, **e-mail se nepočítá**: kapitán týmu často zadá členy s jiným e-mailem. (Do 16. 11. 2026 se počítal i e-mail, a tak se Tomáš Bůžek dostal do databáze dvakrát. Jeho registraci jen na AM ČR jsme zrušili, AM ČR i škola zůstaly v týmové registraci.)
+
+- **Kdo je přihlášený sám jen na AM ČR a znovu se registruje s CWO** (do týmu nebo jednotlivě), toho nová registrace převezme. AM ČR a škola přejdou s ním (pokud v nové registraci nevybral jinou školu), stará registrace se zruší s poznámkou `Sloučeno do registrace …` a potvrzovací e-mail uvede obě soutěže. Původní kód AM-… pak už nenajde nic; ke změnám slouží nová faktura nebo kód.
+- **Každou jinou druhou registraci** formulář odmítne s odkazem na Změnu registrace (AM ČR jde doplnit tam, i členům týmu).
+- Obnova zrušené registrace z auditu selže, pokud už má člověk jinou aktivní registraci.
 
 Databázový unikátní index `athletes_active_identity_key` chrání i souběžná odeslání a přímé úpravy v dashboardu. Zrušená registrace identitu uvolní; její opětovná aktivace narazí na chybu, pokud už existuje jiná aktivní registrace stejného člověka. Funkce pro změny a načítání soukromých údajů jsou dostupné pouze serverové roli `service_role`.
