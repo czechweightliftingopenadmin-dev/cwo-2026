@@ -11,7 +11,9 @@ npm ci
 npm run dev
 ```
 
-Web se spustí na `http://localhost:8080` a automaticky se otevře ve výchozím prohlížeči. Pokud je port 8080 obsazený, server ohlásí chybu místo přepnutí na jiný port. Prohlížečové testy sestaví produkční build a spustí nad ním `vite preview` na portu 4173 bez automatického otevírání prohlížeče.
+Web se spustí na `http://localhost:8080` a automaticky se otevře ve výchozím prohlížeči.
+
+`npm run dev:prod` spustí stejný web, ale startovní listina se načte z ostrých dat produkce (pohled `public_startlist`, ze kterého vzniká večerní snímek, bez roku narození). Potřebuje `SUPABASE_DB_PASSWORD_PROD` v `.env.local`. Dotaz běží v transakci jen pro čtení a ostatní API vrací chybu, takže formuláře do produkce nic nezapíšou. Pokud je port 8080 obsazený, server ohlásí chybu místo přepnutí na jiný port. Prohlížečové testy sestaví produkční build a spustí nad ním `vite preview` na portu 4173 bez automatického otevírání prohlížeče.
 
 ## Kontroly a sestavení
 

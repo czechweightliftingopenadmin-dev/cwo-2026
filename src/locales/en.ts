@@ -309,6 +309,8 @@ export const en: TranslationShape<typeof cs> = {
   },
   env: {
     banner: 'Test version of the site. Registrations go to a test database and do not count.',
+    prodData:
+      'Local preview: the start list from live production data, read-only. Forms send nothing.',
   },
   footer: {
     back: 'Back to top',

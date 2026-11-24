@@ -299,6 +299,8 @@ export const cs = {
   },
   env: {
     banner: 'Testovací verze webu. Registrace se ukládají do testovací databáze a nepočítají se.',
+    prodData:
+      'Lokální náhled: startovní listina z ostrých dat produkce, jen pro čtení. Formuláře nic neodešlou.',
   },
   footer: {
     back: 'Zpět nahoru',

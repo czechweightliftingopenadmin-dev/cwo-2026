@@ -31,7 +31,7 @@ export default function App() {
       <main id="main" tabIndex={-1} className="page-content">
         {!isProduction && (
           <p className="env-banner" role="note">
-            {t('env.banner')}
+            {t(import.meta.env.MODE === 'prod-data' ? 'env.prodData' : 'env.banner')}
           </p>
         )}
         <Hero />
