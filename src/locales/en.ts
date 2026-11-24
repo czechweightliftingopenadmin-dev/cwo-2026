@@ -15,6 +15,7 @@ export const en: TranslationShape<typeof cs> = {
     registration: 'Registration',
     startlist: 'Start list',
     venue: 'The venue',
+    contact: 'Contact',
   },
   controls: {
     language: 'Page language',
@@ -295,6 +296,16 @@ export const en: TranslationShape<typeof cs> = {
     count_one: '{{count}} athlete',
     count_few: '{{count}} athletes',
     count_other: '{{count}} athletes',
+  },
+  contact: {
+    title: 'Contact',
+    email: 'E-mail',
+    newTab: 'Opens in a new tab',
+    roles: {
+      director: 'Technical and Executive Director of the Competition',
+      marketing: 'Marketing Director of the Competition',
+      content: 'Content and Design Manager',
+    },
   },
   env: {
     banner: 'Test version of the site. Registrations go to a test database and do not count.',

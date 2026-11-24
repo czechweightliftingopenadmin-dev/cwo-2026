@@ -23,10 +23,16 @@ const afterEvent = new Date('2026-12-30T12:00:00+01:00')
 
 describe('feature switches', () => {
   it('follow the dates in auto mode', () => {
-    expect(visibleSections(october, auto)).toEqual(['about', 'venue'])
-    expect(visibleSections(november, auto)).toEqual(['about', 'registration', 'venue'])
-    expect(visibleSections(december, auto)).toEqual(['about', 'registration', 'startlist', 'venue'])
-    expect(visibleSections(afterEvent, auto)).toEqual(['about', 'startlist', 'venue'])
+    expect(visibleSections(october, auto)).toEqual(['about', 'venue', 'contact'])
+    expect(visibleSections(november, auto)).toEqual(['about', 'registration', 'venue', 'contact'])
+    expect(visibleSections(december, auto)).toEqual([
+      'about',
+      'registration',
+      'startlist',
+      'venue',
+      'contact',
+    ])
+    expect(visibleSections(afterEvent, auto)).toEqual(['about', 'startlist', 'venue', 'contact'])
     expect(editFormState(november, auto)).toBe('upcoming')
     expect(canChangeRegistration(november, auto)).toBe(true)
     expect(canChangeRegistration(october, auto)).toBe(false)
@@ -47,7 +53,12 @@ describe('feature switches', () => {
 
   it('show the registration section early while the forms keep their dates', () => {
     const production: Features = { ...auto, registrationSection: 'on' }
-    expect(visibleSections(october, production)).toEqual(['about', 'registration', 'venue'])
+    expect(visibleSections(october, production)).toEqual([
+      'about',
+      'registration',
+      'venue',
+      'contact',
+    ])
     expect(isRegistrationOpen(october, production)).toBe(false)
     expect(isRegistrationOpen(november, production)).toBe(true)
     expect(isRegistrationOpen(afterEvent, production)).toBe(false)

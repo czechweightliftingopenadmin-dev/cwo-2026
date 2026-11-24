@@ -5,6 +5,7 @@ import { Sidebar } from './components/Sidebar'
 import { Hero } from './components/Hero'
 import { About } from './components/About'
 import { Venue } from './components/Venue'
+import { Contact } from './components/Contact'
 import { Registration } from './components/registration/Registration'
 import { Startlist } from './components/registration/Startlist'
 import { event } from './config/event'
@@ -38,6 +39,7 @@ export default function App() {
         {isVisible('registration') && <Registration />}
         {isVisible('startlist') && <Startlist />}
         <Venue />
+        <Contact />
         <footer className="footer">
           <span className="footer-brand">
             CWO <span>{event.year}</span>

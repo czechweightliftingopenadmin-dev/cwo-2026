@@ -1677,6 +1677,58 @@ main:focus {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+.contact-section {
+  background: var(--surface-alt);
+}
+.contact-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+  gap: 16px;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0;
+  list-style: none;
+}
+.contact-card {
+  display: flex;
+  flex-direction: column;
+  padding: 28px 24px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+.contact-name {
+  margin: 0;
+  font: 450 clamp(22px, 1.8vw, 26px)/1.2 var(--font-display);
+}
+.contact-role {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.contact-links {
+  display: grid;
+  gap: 10px;
+  margin: auto 0 0;
+  padding: 24px 0 0;
+  list-style: none;
+}
+.contact-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  overflow-wrap: anywhere;
+  text-decoration: none;
+  transition: color var(--duration);
+}
+.contact-links a:hover {
+  color: var(--cyan);
+}
+.contact-links svg {
+  flex-shrink: 0;
+  color: var(--cyan);
+}
 /* Shown everywhere except production, so the dev site is never mistaken for the real one. */
 .env-banner {
   margin: 0;
@@ -1925,6 +1977,9 @@ main:focus {
   .rules-document {
     gap: 10px;
     padding: 16px 12px;
+  }
+  .contact-card {
+    padding: 22px 16px;
   }
   .venue-address p {
     font-size: 15px;

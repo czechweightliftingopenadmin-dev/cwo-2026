@@ -11,6 +11,7 @@ export const cs = {
     registration: 'Registrace',
     startlist: 'Startovní listina',
     venue: 'Místo konání',
+    contact: 'Kontakt',
   },
   controls: {
     language: 'Jazyk stránky',
@@ -285,6 +286,16 @@ export const cs = {
     count_one: '{{count}} závodník',
     count_few: '{{count}} závodníci',
     count_other: '{{count}} závodníků',
+  },
+  contact: {
+    title: 'Kontakt',
+    email: 'E-mail',
+    newTab: 'Otevře se v nové kartě',
+    roles: {
+      director: 'Technická a výkonná ředitelka soutěže',
+      marketing: 'Marketingový ředitel soutěže',
+      content: 'Content a Design manager',
+    },
   },
   env: {
     banner: 'Testovací verze webu. Registrace se ukládají do testovací databáze a nepočítají se.',

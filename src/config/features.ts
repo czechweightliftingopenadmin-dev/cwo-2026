@@ -97,7 +97,7 @@ export function isVisible(
 
 /** Content sections in page order; their labels are numbered by position. */
 export function visibleSections(now = new Date(), config: Features = features) {
-  return (['about', 'registration', 'startlist', 'venue'] as const).filter(
+  return (['about', 'registration', 'startlist', 'venue', 'contact'] as const).filter(
     (id) => (id !== 'registration' && id !== 'startlist') || isVisible(id, now, config),
   )
 }

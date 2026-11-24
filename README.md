@@ -72,6 +72,7 @@ npx vercel dev                                    # web i API, databáze cwo-dev
 
 - `src/config/event.ts`: rok, termín, název, město, adresa, souřadnice a CZ/EN název místa. Termín je 21.–22. 12. 2026. `dates.startsAt` nastavuje cíl odpočtu na 21. prosince v 00:00 českého času; neuvádí čas zahájení programu. `dates.endsAt` je půlnoc po posledním dni soutěže a `dates.timeZone` zajišťuje správné zobrazení data i návštěvníkům ze zahraničí. Při `dates: null` se odpočet skryje a zobrazí se oznámení termínu.
 - `src/locales/cs.ts` a `src/locales/en.ts`: všechny texty a přístupné názvy ovládání. Anglické překlady mají stejnou strukturu kontrolovanou TypeScriptem.
+- `src/config/contacts.ts`: organizátoři v sekci Kontakt (jméno s tituly, e-mail, Instagram), stejní jako na loňském webu. Funkce jsou přeložené v `contact.roles` v obou jazycích.
 - `src/config/competition.ts`: hmotnostní kategorie IWF pro seniory a juniory platné od 1. 8. 2026 a odkazy na pravidla. Texty soutěžních kategorií navazují na loňský web, včetně podmínek věku, otevření a slučování kategorií a členství ČSV pro AMČR.
 - `src/styles.css`: designové tokeny pro oba režimy, rozvržení, CSS grafika a responzivní varianty. Bitcount Single a Inter se načítají lokálně z Fontsource včetně českých znaků.
 - `public/favicon.ico`: původní favicon z [loňského webu](https://github.com/czechweightliftingopenadmin-dev/cwo_web_lepsi/blob/main/public/favicon.ico), převzatá beze změn. Odkaz je v `index.html`.
@@ -91,4 +92,4 @@ Mapa používá OpenLayers a OpenStreetMap jako loňský web. Načítá se až p
 
 Sekce „O soutěži“ obsahuje pravidla a soutěžní řád ČSV: stejné PDF z roku 2019 jako loňský web, uložené v `public/documents/csv-technicka-a-soutezni-pravidla-2019.pdf`. Vydání je uvedeno přímo u odkazu; vedle něj je odkaz na aktuální pravidla na oficiálním webu IWF. Při aktualizaci PDF změň soubor, cestu v `src/config/competition.ts` i označení vydání v obou překladech.
 
-Galerie, harmonogram, propozice AMČR, kontakty a loga partnerů se doplní později. Loňský web zůstává samostatný a tento projekt jej nemění.
+Galerie, harmonogram, propozice AMČR a loga partnerů se doplní později. Loňský web zůstává samostatný a tento projekt jej nemění.
